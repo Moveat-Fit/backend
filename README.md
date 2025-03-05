@@ -1,4 +1,4 @@
-# Documentação da API MoveEat
+# Documentação da API (MoveEat)
 ## Visão Geral
 Esta API fornece endpoints para registro de usuários, autenticação e acesso a recursos protegidos e públicos.
 
