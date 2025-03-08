@@ -4,7 +4,7 @@ def connect_to_database():
         cnxn = pyodbc.connect(
             "Driver={ODBC Driver 18 for SQL Server};"
             "Server=BRASLBRJ0108KD5;"
-            "Database=db_MoveEat;"
+            #"Database=db_MoveEat;"
             "Trusted_Connection=yes;"
             "TrustServerCertificate=yes;"
         )

@@ -28,8 +28,6 @@ def create_database():
 # Chamar a função para criar o banco de dados
 create_database()
 
-
-
 def connect_to_database():
     try:
         cnxn = pyodbc.connect(
@@ -57,7 +55,7 @@ def create_tables(cnxn):
             Name NVARCHAR(100),
             Email NVARCHAR(100) UNIQUE,
             Password NVARCHAR(100),
-            UserType NVARCHAR(50),  -- 'patient' or 'professional'
+            UserType NVARCHAR(50) CHECK (UserType IN ('Nutricionista', 'Personal Trainer', 'Paciente')),  -- Restrição de valores
             DateTime DATETIME DEFAULT GETDATE()
         );
         """,
