@@ -1,13 +1,14 @@
 import pyodbc
 
+
 def connect_database():
     try:
         cnxn = pyodbc.connect(
             "Driver={ODBC Driver 18 for SQL Server};"
             "Server=database-moveat.c70ksemu8pdk.us-east-2.rds.amazonaws.com;"
             "Database=db_Moveat;"
-            "UID=admin_moveat;"  
-            "PWD=Pescarolepedro2!;"  
+            "UID=admin_moveat;"
+            "PWD=Pescarolepedro2!;"
             "TrustServerCertificate=yes;"
         )
         print("Conexão estabelecida")
@@ -16,11 +17,12 @@ def connect_database():
         print("Erro ao conectar ao SQL Server:", e)
         return None
 
+
 def create_tables(cnxn):
     if cnxn is None:
         print("Não foi possível criar as tabelas, pois a conexão falhou.")
         return
-    
+
     sql_commands = [
         """
         CREATE TABLE tb_Users (
@@ -37,7 +39,7 @@ def create_tables(cnxn):
         )
         """
     ]
-    
+
     try:
         cursor = cnxn.cursor()
         for sql in sql_commands:
@@ -49,6 +51,7 @@ def create_tables(cnxn):
     finally:
         cursor.close()
         cnxn.close()
+
 
 # Conectar ao banco e criar as tabelas
 connection = connect_database()

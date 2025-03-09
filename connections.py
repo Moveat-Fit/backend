@@ -1,5 +1,6 @@
 import pyodbc
 
+
 def connect_database():
     try:
         cnxn = pyodbc.connect(
@@ -14,6 +15,7 @@ def connect_database():
         return None
     else:
         print("Conexão estabelecida")
-    return cnxn 
-connection = connect_database()
+    return cnxn
 
+
+connection = connect_database()
