@@ -1,5 +1,5 @@
-"# Arquivos e diret¢rios a serem ignorados" 
-"venv/" 
-"__pycache__/" 
-"*.pyc" 
-".env" 
+# Arquivos e diretï¿½rios a serem ignorados" 
+venv/ 
+__pycache__/ 
+*.pyc" 
+.env
