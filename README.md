@@ -131,8 +131,8 @@ Para iniciar a aplicação em modo de desenvolvimento:
 ```python
 if __name__ == '__main__':
     app.run(debug=True)
-Notas Importantes
+```
+# Notas Importantes
 A chave secreta JWT deve ser alterada para uma chave segura em ambiente de produção.
 As credenciais do banco de dados são carregadas de variáveis de ambiente para maior segurança.
 Certifique-se de que o ODBC Driver 18 for SQL Server está instalado e configurado corretamente.
-```
