@@ -1,198 +1,138 @@
-# Módulo de Conexão com o Banco de Dados
-
-Este módulo fornece uma função para estabelecer uma conexão com um banco de dados SQL Server usando o pyodbc.
-
-## Dependências
-
-- os: Para acessar variáveis de ambiente
-- dotenv: Para carregar variáveis de ambiente de um arquivo .env
-- pyodbc: Para estabelecer a conexão com o SQL Server
-
-## Configuração
-
-1. Instale as dependências necessárias:
-pip install python-dotenv pyodbc
-
-
-
-2. Crie um arquivo `.env` na raiz do projeto com as seguintes variáveis:
-SERVER=seu_servidor UID=seu_usuario PWD=sua_senha DATABASE=seu_banco_de_dados
-
-
-
-3. Certifique-se de ter o ODBC Driver 18 for SQL Server instalado no seu sistema.
-
-## Uso
-
-Para se conectar no banco, use a função `get_db_connection()` no seu script:
-
-```python
-import os
-from dotenv import load_dotenv
-import pyodbc
-
-# Carrega as variáveis de ambiente do arquivo .env
-load_dotenv()
-
-def get_db_connection():
-    server = os.getenv('SERVER')
-    uid = os.getenv('UID')
-    pwd = os.getenv('PWD')
-    database = os.getenv('DATABASE')
-
-    connection_string = (
-        f"Driver={{ODBC Driver 18 for SQL Server}};"
-        f"Server={server};"
-        f"Database={database};"
-        f"UID={uid};"
-        f"PWD={pwd};"
-        "TrustServerCertificate=yes;"
-    )
-    return pyodbc.connect(connection_string)
-```
-
-
-## Consultas
-Para fazer queries no banco:
-```python
-# Estabelecer uma conexão
-conn = get_db_connection()
-
-# Use a conexão para executar queries
-cursor = conn.cursor()
-cursor.execute("SELECT * FROM db_Moveat.dbo.tb_Users")
-
-# Não se esqueça de fechar a conexão quando terminar
-conn.close()
-```
-## Detalhes da Função get_db_connection()
-Esta função realiza as seguintes operações:
-
-Carrega as variáveis de ambiente do arquivo .env.
-Recupera as credenciais e detalhes do servidor do ambiente.
-Constrói a string de conexão para o SQL Server.
-Estabelece e retorna uma conexão com o banco de dados.
-### Parâmetros
-A função não aceita parâmetros diretos. Todas as configurações são obtidas de variáveis de ambiente.
-### Retorno
-Retorna um objeto de conexão pyodbc que pode ser usado para interagir com o banco de dados.
-
-### Exceções
-Pode lançar pyodbc.Error se houver problemas ao estabelecer a conexão.
-Segurança
-As credenciais do banco de dados são armazenadas em variáveis de ambiente, não no código.
-A opção TrustServerCertificate=yes é usada. Em ambientes de produção, considere configurar certificados SSL apropriadamente.
-### Notas Adicionais
-Este módulo usa o ODBC Driver 18 for SQL Server. Ajuste o driver conforme necessário para sua configuração.
-Certifique-se de que o arquivo .env está incluído no .gitignore para evitar o compartilhamento acidental de credenciais.
-
-Para mais informações sobre pyodbc e conexões SQL Server, consulte:
-#### Documentação do pyodbc: https://github.com/mkleehammer/pyodbc/wiki
-#### Drivers ODBC da Microsoft: https://docs.microsoft.com/en-us/sql/connect/odbc/download-odbc-driver-for-sql-server
-
-
 # API de Gerenciamento de Usuários
-
-Esta API fornece endpoints para registro de usuários, autenticação e recursos protegidos/públicos utilizando Flask, Flask-RESTful e JWT.
+Esta API fornece endpoints para o registro de usuários, autenticação e acesso a recursos protegidos e públicos utilizando Flask, Flask-RESTful e JWT.
 
 ## Configuração e Dependências
+Flask: Framework web para construir aplicações web.
 
-- Flask: Framework web
-- Flask-RESTful: Extensão para criar APIs RESTful
-- Flask-JWT-Extended: Gerenciamento de tokens JWT
-- Flask-CORS: Suporte a Cross-Origin Resource Sharing
-- pyodbc: Conexão com banco de dados SQL Server
-- python-dotenv: Carregamento de variáveis de ambiente
-- werkzeug.security: Hashing de senhas
+Flask-RESTful: Extensão para a criação de APIs RESTful de forma simples.
+
+Flask-JWT-Extended: Gerenciamento de tokens JWT para autenticação.
+
+Flask-CORS: Suporte a Cross-Origin Resource Sharing, permitindo que recursos restritos em uma página web sejam recuperados por outro domínio.
+
+pyodbc: Conexão com banco de dados SQL Server.
+
+python-dotenv: Carregamento de variáveis de ambiente de um arquivo .env.
+
+werkzeug.security: Utilitários de segurança para hashing de senhas.
 
 ## Inicialização da Aplicação
+A aplicação é inicializada com as seguintes configurações, que incluem habilitação de CORS, configuração de JWT e criação de endpoints da API:
+
 
 ```python
-app = Flask(__name__)
-api = Api(app)
-CORS(app)  # Habilita CORS para todas as rotas
+from flask import Flask
+from flask_restful import Api
+from flask_jwt_extended import JWTManager
+from flask_cors import CORS
+from app.config import Config
+from app.resources import UserRegistration, UserLogin, ProtectedResource, PublicResource, TestConnection
 
-# Configuração do JWT
-app.config['JWT_SECRET_KEY'] = 'd7c4d51f08d4f352273c3f549bdd7fcd4195b5355b1718dfdddcc7dde012b427'
-jwt = JWTManager(app)
+def create_app():
+    app = Flask(__name__)
+    app.config.from_object(Config)
+    CORS(app)  # Habilita CORS para todas as rotas
+    jwt = JWTManager(app)  # Configuração do JWT
+    api = Api(app)
 
-load_dotenv() #variáveis
-```
-## Conexão com o Banco de Dados
-A função get_db_connection() estabelece uma conexão com o banco de dados SQL Server usando credenciais armazenadas em variáveis de ambiente.
+    # Adicionando recursos à API
+    api.add_resource(UserRegistration, '/register')
+    api.add_resource(UserLogin, '/login')
+    api.add_resource(ProtectedResource, '/protected')
+    api.add_resource(PublicResource, '/public')
+    api.add_resource(TestConnection, '/test-connection')
 
+    return app
+ ```
 ## Recursos da API
 ### 1. UserRegistration (POST /register)
 Registra um novo usuário no sistema.
 
-## Parâmetros (JSON):
+### Parâmetros (JSON):
+name: Nome do usuário.
 
-name: Nome do usuário
-email: Email do usuário
-password: Senha do usuário
-cpf: CPF do usuário
-cellphone: Número de celular
-crn: Número CRN (opcional)
-cref: Número CREF (opcional)
-user_type: Tipo de usuário
-Respostas:
+email: Email do usuário.
 
-201: Usuário registrado com sucesso
-400: Campos obrigatórios ausentes
-409: Erro de integridade de dados
-500: Erro interno do servidor
+password: Senha do usuário.
+
+cpf: CPF do usuário.
+
+cellphone: Número de celular.
+
+crn: Número CRN (profissional).
+
+cref: Número CREF (profissional).
+
+user_type: Tipo de usuário.
+
+## Respostas:
+201: Usuário registrado com sucesso.
+
+400: Campos obrigatórios ausentes ou inválidos.
+
+409: Erro de integridade de dados (usuário já registrado).
+
+500: Erro interno do servidor.
 
 ### 2. UserLogin (POST /login)
 Autentica um usuário e retorna um token JWT.
 
-## Parâmetros (JSON):
+### Parâmetros (JSON):
+login: Email, CPF ou celular do usuário.
 
-login: Email, CPF ou celular do usuário
-password: Senha do usuário
-Respostas:
+password: Senha do usuário.
 
-200: Login bem-sucedido, retorna token JWT
-400: Credenciais incompletas
-401: Credenciais inválidas
-500: Erro interno do servidor
+## Respostas:
+200: Login bem-sucedido, retorna token JWT.
+
+400: Credenciais incompletas.
+
+401: Credenciais inválidas.
+
+500: Erro interno do servidor.
+
 ### 3. ProtectedResource (GET /protected)
 Exemplo de rota protegida que requer autenticação JWT.
 
-Respostas:
+## Respostas:
+200: Retorna a identidade do usuário logado.
 
-200: Retorna a identidade do usuário logado
-401: Acesso não autorizado (token ausente ou inválido)
+401: Acesso não autorizado (token ausente ou inválido).
+
 ### 4. PublicResource (GET /public)
 Exemplo de rota pública acessível sem autenticação.
 
-Respostas:
-
-200: Mensagem de rota pública
+## Respostas:
+200: Mensagem de rota pública.
 ### 5. TestConnection (GET /test-connection)
 Testa a conexão com o banco de dados.
 
-Respostas:
+## Respostas:
+200: Conexão estabelecida com sucesso.
 
-200: Conexão estabelecida com sucesso
-500: Falha na conexão com o banco de dados
-### Tratamento de Erros
-404: Endpoint não encontrado
-500: Erro interno do servidor
-### Segurança
-Senhas são armazenadas com hash usando werkzeug.security
-Autenticação baseada em tokens JWT
-CORS habilitado para todas as rotas
-### Execução
+500: Falha na conexão com o banco de dados.
+
+## Tratamento de Erros
+404: Endpoint não encontrado.
+
+500: Erro interno do servidor.
+
+## Segurança
+Senhas são armazenadas com hash usando werkzeug.security.
+
+Autenticação baseada em tokens JWT.
+
+CORS habilitado para todas as rotas.
+
+## Execução
 Para iniciar a aplicação em modo de desenvolvimento:
+
 
 ```python
 if __name__ == '__main__':
     app.run(debug=True)
-```
-# Notas Importantes
+Notas Importantes
 A chave secreta JWT deve ser alterada para uma chave segura em ambiente de produção.
 As credenciais do banco de dados são carregadas de variáveis de ambiente para maior segurança.
 Certifique-se de que o ODBC Driver 18 for SQL Server está instalado e configurado corretamente.
-
-
-
+```
