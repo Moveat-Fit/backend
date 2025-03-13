@@ -43,26 +43,48 @@ class UserRegistration(Resource):
         password = data.get('password')
         cpf = data.get('cpf')
         cellphone = data.get('cellphone')
-        crn = data.get('crn', None)  # Opcional, pode ser None
-        cref = data.get('cref', None)  # Opcional, pode ser None
+        crn = data.get('crn', None)
+        cref = data.get('cref', None)
         user_type = data.get('user_type')
 
-        # Verificação de campos obrigatórios
         required_fields = [name, email, password, cpf, cellphone, user_type]
         if not all(required_fields):
             return {'message': 'Todos os campos obrigatórios devem ser preenchidos'}, 400
 
-        hashed_password = generate_password_hash(password, method='pbkdf2:sha256:100000', salt_length=8)
-
         cnxn = get_db_connection()
         cursor = cnxn.cursor()
+
         try:
+            cursor.execute("""
+                SELECT Email, CPF, CellPhone, CRN, CREF FROM tb_Users 
+                WHERE Email = ? OR CPF = ? OR CellPhone = ? OR (CRN IS NOT NULL AND CRN = ?) OR (CREF IS NOT NULL AND CREF = ?)
+            """, (email, cpf, cellphone, crn, cref))
+            existing_user = cursor.fetchone()
+
+            if existing_user:
+                existing_email, existing_cpf, existing_cellphone, existing_crn, existing_cref = existing_user
+
+                if existing_email == email:
+                    return {'message': 'E-mail já está cadastrado'}, 409
+                if existing_cpf == cpf:
+                    return {'message': 'CPF já está cadastrado'}, 409
+                if existing_cellphone == cellphone:
+                    return {'message': 'Celular já está cadastrado'}, 409
+                if existing_crn and crn and existing_crn == crn:
+                    return {'message': 'CRN já está cadastrado'}, 409
+                if existing_cref and cref and existing_cref == cref:
+                    return {'message': 'CREF já está cadastrado'}, 409
+
+            hashed_password = generate_password_hash(password, method='pbkdf2:sha256:100000', salt_length=8)
+
             cursor.execute("""
                 INSERT INTO tb_Users (Name, Email, Password, CPF, CellPhone, CRN, CREF, UserType) 
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """, (name, email, hashed_password, cpf, cellphone, crn, cref, user_type))
             cnxn.commit()
+
             return {'message': 'Usuário registrado com sucesso'}, 201
+
         except pyodbc.IntegrityError as e:
             return {'message': f'Erro de integridade de dados: {str(e)}'}, 409
         except pyodbc.Error as e:
@@ -77,9 +99,12 @@ class UserLogin(Resource):
         login = data.get('login')  # Pode ser email, CPF ou celular
         password = data.get('password')
 
-        if not login or not password:
-            return {'message': 'Login e senha são obrigatórios'}, 400
-
+        if not login:
+            return {'message': 'Login é obrigatório'}, 400
+        
+        if not password:
+            return {'message': 'Senha é obrigatória'}, 400
+        
         cnxn = get_db_connection()
         cursor = cnxn.cursor()
         try:
@@ -93,7 +118,7 @@ class UserLogin(Resource):
                 access_token = create_access_token(identity=login)
                 return {'access_token': access_token}, 200
             else:
-                return {'message': 'Credenciais inválidas'}, 401
+                return {'message': 'E-mail e/ou senha inválidos'}, 401
         except pyodbc.Error as e:
             return {'message': f'Erro ao fazer login: {str(e)}'}, 500
         finally:
