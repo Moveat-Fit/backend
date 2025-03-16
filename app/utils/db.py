@@ -1,22 +1,21 @@
-import os
-from dotenv import load_dotenv
-import pyodbc
+import mysql.connector
 
-# Carrega as variáveis de ambiente do arquivo .env
-load_dotenv()
+def connect_database():
+    try:
+        cnxn = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="ymw2yWp*",
+            database="db_moveat"
+        )
+        print("Conexão estabelecida com MySQL.")
+        return cnxn
+    except mysql.connector.Error as e:
+        print("Erro ao conectar ao MySQL", e)
+        return None
 
-def get_db_connection():
-    server = os.getenv('SERVER')
-    uid = os.getenv('UID')
-    pwd = os.getenv('PWD')
-    database = os.getenv('DATABASE')
-
-    connection_string = (
-        f"Driver={{ODBC Driver 18 for SQL Server}};"
-        f"Server={server};"
-        f"Database={database};"
-        f"UID={uid};"
-        f"PWD={pwd};"
-        "TrustServerCertificate=yes;"
-    )
-    return pyodbc.connect(connection_string)
+connection = connect_database()
+if connection:
+    print("Banco de dados conectado com sucesso!")
+else:
+    print("Falha na conexão com o banco.")
