@@ -4,6 +4,9 @@ from flask_jwt_extended import JWTManager, create_access_token, jwt_required, ge
 from werkzeug.security import generate_password_hash, check_password_hash
 import pyodbc
 from flask_cors import CORS
+import os
+from dotenv import load_dotenv
+
 
 app = Flask(__name__)
 api = Api(app)
@@ -13,15 +16,24 @@ CORS(app)  # Habilita CORS para todas as rotas
 app.config['JWT_SECRET_KEY'] = 'd7c4d51f08d4f352273c3f549bdd7fcd4195b5355b1718dfdddcc7dde012b427'  # Troque por uma chave secreta real
 jwt = JWTManager(app)
 
-# Conexão ao banco de dados
+
+load_dotenv()
+
 def get_db_connection():
-    return pyodbc.connect(
-        "Driver={ODBC Driver 18 for SQL Server};"
-        "Server=BRASLBRJ0108KD5;"
-        "Database=db_MoveEat;"
-        "Trusted_Connection=yes;"
+    server = os.getenv('SERVER')
+    uid = os.getenv('UID')
+    pwd = os.getenv('PWD')
+    database = os.getenv('DATABASE')
+
+    connection_string = (
+        f"Driver={{ODBC Driver 18 for SQL Server}};"
+        f"Server={server};"
+        f"Database={database};"
+        f"UID={uid};"
+        f"PWD={pwd};"
         "TrustServerCertificate=yes;"
     )
+    return pyodbc.connect(connection_string)
 
 class UserRegistration(Resource):
     def post(self):
@@ -29,22 +41,52 @@ class UserRegistration(Resource):
         name = data.get('name')
         email = data.get('email')
         password = data.get('password')
-        user_type = data.get('user_type')  #
+        cpf = data.get('cpf')
+        cellphone = data.get('cellphone')
+        crn = data.get('crn', None)
+        cref = data.get('cref', None)
+        user_type = data.get('user_type')
 
-        if not all([name, email, password, user_type]):
-            return {'message': 'Todos os campos são obrigatórios'}, 400
-
-        hashed_password = generate_password_hash(password, method='pbkdf2:sha256:100000', salt_length=8)
+        required_fields = [name, email, password, cpf, cellphone, user_type]
+        if not all(required_fields):
+            return {'message': 'Todos os campos obrigatórios devem ser preenchidos'}, 400
 
         cnxn = get_db_connection()
         cursor = cnxn.cursor()
+
         try:
-            cursor.execute("INSERT INTO tb_Users (Name, Email, Password, UserType) VALUES (?, ?, ?, ?)",
-                           (name, email, hashed_password, user_type))
+            cursor.execute("""
+                SELECT Email, CPF, CellPhone, CRN, CREF FROM tb_Users 
+                WHERE Email = ? OR CPF = ? OR CellPhone = ? OR (CRN IS NOT NULL AND CRN = ?) OR (CREF IS NOT NULL AND CREF = ?)
+            """, (email, cpf, cellphone, crn, cref))
+            existing_user = cursor.fetchone()
+
+            if existing_user:
+                existing_email, existing_cpf, existing_cellphone, existing_crn, existing_cref = existing_user
+
+                if existing_email == email:
+                    return {'message': 'E-mail já está cadastrado'}, 409
+                if existing_cpf == cpf:
+                    return {'message': 'CPF já está cadastrado'}, 409
+                if existing_cellphone == cellphone:
+                    return {'message': 'Celular já está cadastrado'}, 409
+                if existing_crn and crn and existing_crn == crn:
+                    return {'message': 'CRN já está cadastrado'}, 409
+                if existing_cref and cref and existing_cref == cref:
+                    return {'message': 'CREF já está cadastrado'}, 409
+
+            hashed_password = generate_password_hash(password, method='pbkdf2:sha256:100000', salt_length=8)
+
+            cursor.execute("""
+                INSERT INTO tb_Users (Name, Email, Password, CPF, CellPhone, CRN, CREF, UserType) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """, (name, email, hashed_password, cpf, cellphone, crn, cref, user_type))
             cnxn.commit()
+
             return {'message': 'Usuário registrado com sucesso'}, 201
-        except pyodbc.IntegrityError:
-            return {'message': 'Email já cadastrado'}, 409
+
+        except pyodbc.IntegrityError as e:
+            return {'message': f'Erro de integridade de dados: {str(e)}'}, 409
         except pyodbc.Error as e:
             return {'message': f'Erro ao registrar usuário: {str(e)}'}, 500
         finally:
@@ -54,22 +96,29 @@ class UserRegistration(Resource):
 class UserLogin(Resource):
     def post(self):
         data = request.get_json()
-        email = data.get('email')
+        login = data.get('login')  # Pode ser email, CPF ou celular
         password = data.get('password')
 
-        if not email or not password:
-            return {'message': 'Email e senha são obrigatórios'}, 400
-
+        if not login:
+            return {'message': 'Login é obrigatório'}, 400
+        
+        if not password:
+            return {'message': 'Senha é obrigatória'}, 400
+        
         cnxn = get_db_connection()
         cursor = cnxn.cursor()
         try:
-            cursor.execute("SELECT Password FROM tb_Users WHERE Email = ?", (email,))
+            # Tenta encontrar o usuário por email, CPF ou celular
+            cursor.execute("""
+                SELECT Password FROM tb_Users 
+                WHERE Email = ? OR CPF = ? OR CellPhone = ?
+            """, (login, login, login))
             user = cursor.fetchone()
             if user and check_password_hash(user.Password, password):
-                access_token = create_access_token(identity=email)
+                access_token = create_access_token(identity=login)
                 return {'access_token': access_token}, 200
             else:
-                return {'message': 'Credenciais inválidas'}, 401
+                return {'message': 'E-mail e/ou senha inválidos'}, 401
         except pyodbc.Error as e:
             return {'message': f'Erro ao fazer login: {str(e)}'}, 500
         finally:
@@ -91,7 +140,16 @@ class PublicResource(Resource):
 # Nova rota de teste para verificar a conexão
 class TestConnection(Resource):
     def get(self):
-        return jsonify(message="Conexão com o backend estabelecida com sucesso!")
+        try:
+            cnxn = get_db_connection()
+            cursor = cnxn.cursor()
+            cursor.execute("SELECT 1")  # Executa uma query simples para testar a conexão
+            return jsonify(message="Conexão com o backend estabelecida com sucesso!")
+        except pyodbc.Error as e:
+            return jsonify(message=f"Falha na conexão com o banco de dados: {str(e)}"), 500
+        finally:
+            cursor.close()
+            cnxn.close()
 
 api.add_resource(UserRegistration, '/register')
 api.add_resource(UserLogin, '/login')
