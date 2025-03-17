@@ -1,25 +1,22 @@
 import os
 from dotenv import load_dotenv
+
+# Carregar o arquivo .env
+dotenv_path = os.path.join(os.path.dirname(__file__), '../../.env')
+load_dotenv(dotenv_path)
+
+# Validar carregamento
+print("Host:", os.getenv("MYSQL_HOST"))
+print("Username:", os.getenv("MYSQL_USER"))
+print("Database:", os.getenv("MYSQL_DB"))
+
 import mysql.connector
 
-# Carrega as variáveis de ambiente do arquivo .env
-load_dotenv()
+connection = mysql.connector.connect(
+    host=os.getenv("MYSQL_HOST"),
+    user=os.getenv("MYSQL_USER"),
+    password=os.getenv("MYSQL_PASSWORD"),
+    database=os.getenv("MYSQL_DB"),
+)
 
-def get_db_connection():
-    host = os.getenv('DB_HOST', '127.0.0.1')
-    user = os.getenv('DB_USER', 'root')
-    password = os.getenv('DB_PASSWORD', 'ymw2yWp*')
-    database = os.getenv('DB_DATABASE', 'db_moveat')
-
-    connection = mysql.connector.connect(
-        host=host,
-        user=user,
-        password=password,
-        database=database
-    )
-    
-    return connection
-
-connection = get_db_connection()
 print("Conexão bem-sucedida!")
-connection.close()
