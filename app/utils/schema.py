@@ -5,13 +5,13 @@ import os
 load_dotenv()
 
 def connect_database():
+    load_dotenv()
     try:
         cnxn = mysql.connector.connect(
-            host="127.0.0.1",
-            user=os.getenv("MYSQL_USER"),
-            password=os.getenv("MYSQL_PASSWORD"),
-            database=os.getenv("MYSQL_DB"),
-            port=3306,
+            host="localhost",
+            database="db_moveat",
+            user="root",
+            password="ymw2yWp*"
         )
         print("Conexão estabelecida")
         return cnxn
