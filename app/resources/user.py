@@ -4,7 +4,7 @@ import pyodbc
 import re
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_jwt_extended import create_access_token
-from app.utils.db import get_db_connection
+from app.utils.db import connect_database  
 
 def validate_password(password):
     """
@@ -43,7 +43,7 @@ class UserRegistration(Resource):
         cref = data.get('cref', None)
         user_type = data.get('user_type')
 
-        if not re.match(r'^[0-9]{3}\.[0-9]{3}\.[0-9]{3}-[0-9]{2}$', cpf):
+        if not re.match(r'^[0-9]{11}$', cpf):
             return {'message': 'Formato de CPF inválido'}, 400
         if not re.match(r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$', email):
             return {'message': 'Formato de e-mail inválido'}, 400
@@ -56,17 +56,18 @@ class UserRegistration(Resource):
 
         hashed_password = generate_password_hash(password, method='pbkdf2:sha256:100000', salt_length=8)
 
-        cnxn = get_db_connection()
+        cnxn = connect_database  ()
         cursor = cnxn.cursor()
         try:
-            cursor.execute("SELECT * FROM tb_Users WHERE Email = ? OR CPF = ? OR CellPhone = ?", (email, cpf, cellphone))
+            cursor.execute("SELECT * FROM tb_Users WHERE Email = %s OR CPF = %s OR CellPhone = %s", (email, cpf, cellphone))
             if cursor.fetchone():
                 return {'message': 'Email, CPF ou número de telefone já registrado'}, 409
 
             cursor.execute("""
                 INSERT INTO tb_Users (Name, Email, Password, CPF, CellPhone, CRN, CREF, UserType) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             """, (name, email, hashed_password, cpf, cellphone, crn, cref, user_type))
+
             cnxn.commit()
             return {'message': 'Usuário registrado com sucesso'}, 201
         except pyodbc.IntegrityError as e:
@@ -86,13 +87,14 @@ class UserLogin(Resource):
         if not login or not password:
             return {'message': 'Login e senha são obrigatórios'}, 400
 
-        cnxn = get_db_connection()
+        cnxn = connect_database  ()
         cursor = cnxn.cursor()
         try:
             cursor.execute("""
                 SELECT Password FROM tb_Users 
-                WHERE Email = ? OR CPF = ? OR CellPhone = ?
+                WHERE Email = %s OR CPF = %s OR CellPhone = %s
             """, (login, login, login))
+
             user = cursor.fetchone()
             if user and check_password_hash(user['Password'], password):
                 access_token = create_access_token(identity=login)
