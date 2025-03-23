@@ -1,13 +1,13 @@
 import pyodbc
 from flask_restful import Resource
-from app.utils.db import get_db_connection
+from app.utils.db import connect_database  
 import datetime
 class TestConnection(Resource):
     def get(self):
         connection = None
         cursor = None
         try:
-            connection = get_db_connection()
+            connection = connect_database  ()
             cursor = connection.cursor()
             cursor.execute("SELECT * FROM tb_Users")
             columns = [column[0] for column in cursor.description]
