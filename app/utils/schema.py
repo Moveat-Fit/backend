@@ -1,13 +1,17 @@
 import mysql.connector
+from dotenv import load_dotenv
+import os
 
+load_dotenv()
 
 def connect_database():
     try:
         cnxn = mysql.connector.connect(
-            host="localhost",
-            database="db_moveat",
-            user="root",
-            password="ymw2yWp*"
+            host="127.0.0.1",
+            user=os.getenv("MYSQL_USER"),
+            password=os.getenv("MYSQL_PASSWORD"),
+            database=os.getenv("MYSQL_DB"),
+            port=3306,
         )
         print("Conexão estabelecida")
         return cnxn
@@ -23,18 +27,36 @@ def create_tables(cnxn):
 
     sql_commands = [
         """
-        CREATE TABLE tb_Users (
-            UserID INT PRIMARY KEY AUTO_INCREMENT,
-            Name VARCHAR(100) NOT NULL,
-            Email VARCHAR(100) UNIQUE NOT NULL,
-            Password VARCHAR(255) NOT NULL,
-            CPF VARCHAR(11) UNIQUE,
-            CellPhone VARCHAR(15) UNIQUE,
-            CRN VARCHAR(10) UNIQUE NULL,
-            CREF VARCHAR(10) UNIQUE NULL,
-            UserType VARCHAR(50),
-            CreatedAt DATETIME DEFAULT NOW(),
-            CHECK (UserType IN ('Nutricionista', 'Personal Trainer', 'Paciente'))
+        CREATE TABLE IF NOT EXISTS TB_PROFESSIONALS (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            full_name VARCHAR(255) NOT NULL,
+            email VARCHAR(255) UNIQUE NOT NULL,
+            password VARCHAR(255) NOT NULL,
+            cpf CHAR(11) UNIQUE NOT NULL,
+            phone VARCHAR(15) NOT NULL,
+            regional_council_type VARCHAR(50) NOT NULL,
+            regional_council VARCHAR(50) NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        )
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS TB_PATIENTS (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            full_name VARCHAR(255) NOT NULL,
+            birth_date DATE NOT NULL,
+            gender ENUM('M', 'F', 'Other') NOT NULL,
+            email VARCHAR(255) UNIQUE NOT NULL,
+            password VARCHAR(255) NOT NULL,
+            mobile VARCHAR(15) NOT NULL,
+            cpf CHAR(11) UNIQUE NOT NULL,
+            weight DECIMAL(5,2) NOT NULL,
+            height DECIMAL(3,2) NOT NULL,
+            note TEXT,
+            professional_id INT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            FOREIGN KEY (professional_id) REFERENCES TB_PROFESSIONALS(id)
         )
         """
     ]
