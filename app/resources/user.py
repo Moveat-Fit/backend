@@ -56,7 +56,7 @@ class UserRegistration(Resource):
 
         hashed_password = generate_password_hash(password, method='pbkdf2:sha256:100000', salt_length=8)
 
-        cnxn = connect_database  ()
+        cnxn = connect_database()
         cursor = cnxn.cursor()
         try:
             cursor.execute("SELECT * FROM tb_Users WHERE Email = %s OR CPF = %s OR CellPhone = %s", (email, cpf, cellphone))
@@ -87,7 +87,7 @@ class UserLogin(Resource):
         if not login or not password:
             return {'message': 'Login e senha são obrigatórios'}, 400
 
-        cnxn = connect_database  ()
+        cnxn = connect_database()
         cursor = cnxn.cursor()
         try:
             cursor.execute("""
@@ -98,6 +98,56 @@ class UserLogin(Resource):
             user = cursor.fetchone()
             if user and check_password_hash(user['Password'], password):
                 access_token = create_access_token(identity=login)
+                return {'access_token': access_token}, 200
+            else:
+                return {'message': 'Credenciais inválidas'}, 401
+        except pyodbc.Error as e:
+            return {'message': f'Erro ao fazer login: {str(e)}'}, 500
+        finally:
+            cursor.close()
+            cnxn.close()
+
+class ProfessionalLogin(Resource):
+    def post(self):
+        data = request.get_json()
+        login = data.get('login')
+        password = data.get('password')
+
+        if not login or not password:
+            return {'message': 'Login e senha são obrigatórios'}, 400
+
+        cnxn = connect_database()
+        cursor = cnxn.cursor()
+        try:
+            cursor.execute("SELECT Password FROM tb_professionals WHERE Email = %s OR CPF = %s OR CellPhone = %s", (login, login, login))
+            professional = cursor.fetchone()
+            if professional and check_password_hash(professional['Password'], password):
+                access_token = create_access_token(identity=login, additional_claims={"role": "professional"})
+                return {'access_token': access_token}, 200
+            else:
+                return {'message': 'Credenciais inválidas'}, 401
+        except pyodbc.Error as e:
+            return {'message': f'Erro ao fazer login: {str(e)}'}, 500
+        finally:
+            cursor.close()
+            cnxn.close()
+
+class PatientLogin(Resource):
+    def post(self):
+        data = request.get_json()
+        login = data.get('login')
+        password = data.get('password')
+
+        if not login or not password:
+            return {'message': 'Login e senha são obrigatórios'}, 400
+
+        cnxn = connect_database()
+        cursor = cnxn.cursor()
+        try:
+            cursor.execute("SELECT Password FROM tb_patients WHERE Email = %s OR CPF = %s OR CellPhone = %s", (login, login, login))
+            patient = cursor.fetchone()
+            if patient and check_password_hash(patient['Password'], password):
+                access_token = create_access_token(identity=login, additional_claims={"role": "patient"})
                 return {'access_token': access_token}, 200
             else:
                 return {'message': 'Credenciais inválidas'}, 401
