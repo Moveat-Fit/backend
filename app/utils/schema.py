@@ -9,7 +9,7 @@ def connect_database():
         cnxn = mysql.connector.connect(
             host=os.getenv("MYSQL_HOST"),
             user=os.getenv("MYSQL_USER"),
-            password=os.getenv("MYSQL_PASSWORD"),
+            password=os.getenv("MYSQL_PASSWORDp"),
             database=os.getenv("MYSQL_DB"),
         )
         print("Conexão estabelecida")

@@ -3,11 +3,9 @@ from flask_restful import Api
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
 from .config import Config
-from .resources.user import UserRegistration, UserLogin, ProfessionalLogin, PatientLogin
+from .resources.user import ProfessionalRegistration, ProfessionalLogin, PatientLogin, PatientRegistration
 from .resources.protected import ProtectedResource
 from .resources.public import PublicResource
-from .resources.test_connection import TestConnection
-from .resources.patient_registration import PatientRegistration
 
 def create_app():
     app = Flask(__name__)
@@ -17,14 +15,13 @@ def create_app():
     api = Api(app)
 
     # Adicionando recursos à API
-    api.add_resource(UserRegistration, '/register')
-    api.add_resource(UserLogin, '/login')
+    api.add_resource(ProfessionalRegistration, '/register')
     api.add_resource(ProfessionalLogin, '/professional')
     api.add_resource(PatientLogin, '/patient')
+    api.add_resource(PatientRegistration, '/register/patient')
     api.add_resource(ProtectedResource, '/protected')
     api.add_resource(PublicResource, '/public')
     api.add_resource(TestConnection, '/test-connection')
-    api.add_resource(PatientRegistration, '/register-patient')
 
     # Tratamento de erros
     @app.errorhandler(404)

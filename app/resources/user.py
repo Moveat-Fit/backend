@@ -3,8 +3,10 @@ from flask import request
 import pyodbc
 import re
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_jwt_extended import create_access_token
-from app.utils.db import connect_database  
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, get_jwt
+from app.utils.db import connect_database
+from datetime import datetime
+
 
 def validate_password(password):
     """
@@ -31,23 +33,22 @@ def validate_password(password):
     else:
         return False, ' '.join(error_messages)
 
-class UserRegistration(Resource):
+class ProfessionalRegistration(Resource):
     def post(self):
         data = request.get_json()
-        name = data.get('name')
+        full_name = data.get('full_name')
         email = data.get('email')
         password = data.get('password')
         cpf = data.get('cpf')
-        cellphone = data.get('cellphone')
-        crn = data.get('crn', None)
-        cref = data.get('cref', None)
-        user_type = data.get('user_type')
+        phone = data.get('phone')
+        regional_council_type = data.get('regional_council_type')
+        regional_council = data.get('regional_council')
 
         if not re.match(r'^[0-9]{11}$', cpf):
             return {'message': 'Formato de CPF inválido'}, 400
         if not re.match(r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$', email):
             return {'message': 'Formato de e-mail inválido'}, 400
-        if len(cellphone) != 11:
+        if len(phone) != 11:
             return {'message': 'O número de telefone deve ter 11 caracteres'}, 400
 
         password_valid, password_message = validate_password(password)
@@ -59,50 +60,22 @@ class UserRegistration(Resource):
         cnxn = connect_database()
         cursor = cnxn.cursor()
         try:
-            cursor.execute("SELECT * FROM tb_Users WHERE Email = %s OR CPF = %s OR CellPhone = %s", (email, cpf, cellphone))
+            cursor.execute("SELECT * FROM tb_professionals WHERE email = %s OR cpf = %s OR phone = %s", (email, cpf, phone))
             if cursor.fetchone():
                 return {'message': 'Email, CPF ou número de telefone já registrado'}, 409
 
             cursor.execute("""
-                INSERT INTO tb_Users (Name, Email, Password, CPF, CellPhone, CRN, CREF, UserType) 
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-            """, (name, email, hashed_password, cpf, cellphone, crn, cref, user_type))
+                INSERT INTO tb_professionals (full_name, email, password, cpf, phone, regional_council_type, regional_council, created_at, updated_at) 
+                VALUES (%s, %s, %s, %s, %s, %s, %s, NOW(), NOW())
+            """, (full_name, email, hashed_password, cpf, phone, regional_council_type, regional_council))
 
             cnxn.commit()
-            return {'message': 'Usuário registrado com sucesso'}, 201
+            access_token = create_access_token(identity=email, additional_claims={"role": "professional"})
+            return {'message': 'Profissional registrado com sucesso', 'access_token': access_token}, 201
         except pyodbc.IntegrityError as e:
             return {'message': f'Erro de integridade de dados: {str(e)}'}, 409
         except pyodbc.Error as e:
-            return {'message': f'Erro ao registrar usuário: {str(e)}'}, 500
-        finally:
-            cursor.close()
-            cnxn.close()
-
-class UserLogin(Resource):
-    def post(self):
-        data = request.get_json()
-        login = data.get('login')  # Pode ser email, CPF ou celular
-        password = data.get('password')
-
-        if not login or not password:
-            return {'message': 'Login e senha são obrigatórios'}, 400
-
-        cnxn = connect_database()
-        cursor = cnxn.cursor()
-        try:
-            cursor.execute("""
-                SELECT Password FROM tb_Users 
-                WHERE Email = %s OR CPF = %s OR CellPhone = %s
-            """, (login, login, login))
-
-            user = cursor.fetchone()
-            if user and check_password_hash(user['Password'], password):
-                access_token = create_access_token(identity=login)
-                return {'access_token': access_token}, 200
-            else:
-                return {'message': 'Credenciais inválidas'}, 401
-        except pyodbc.Error as e:
-            return {'message': f'Erro ao fazer login: {str(e)}'}, 500
+            return {'message': f'Erro ao registrar profissional: {str(e)}'}, 500
         finally:
             cursor.close()
             cnxn.close()
@@ -114,15 +87,15 @@ class ProfessionalLogin(Resource):
         password = data.get('password')
 
         if not login or not password:
-            return {'message': 'Login e senha são obrigatórios'}, 400
+            return {'message': 'E-mail e senha são obrigatórios'}, 400
 
         cnxn = connect_database()
         cursor = cnxn.cursor()
         try:
-            cursor.execute("SELECT Password FROM tb_professionals WHERE Email = %s OR CPF = %s OR CellPhone = %s", (login, login, login))
+            cursor.execute("SELECT id, password FROM tb_professionals WHERE email = %s OR cpf = %s OR phone = %s", (login, login, login))
             professional = cursor.fetchone()
-            if professional and check_password_hash(professional['Password'], password):
-                access_token = create_access_token(identity=login, additional_claims={"role": "professional"})
+            if professional and check_password_hash(professional[1], password):
+                access_token = create_access_token(identity=str(professional[0]), additional_claims={"role": "professional"})
                 return {'access_token': access_token}, 200
             else:
                 return {'message': 'Credenciais inválidas'}, 401
@@ -144,15 +117,117 @@ class PatientLogin(Resource):
         cnxn = connect_database()
         cursor = cnxn.cursor()
         try:
-            cursor.execute("SELECT Password FROM tb_patients WHERE Email = %s OR CPF = %s OR CellPhone = %s", (login, login, login))
+            cursor.execute("SELECT id, password FROM tb_patients WHERE email = %s OR cpf = %s OR mobile = %s", (login, login, login))
             patient = cursor.fetchone()
-            if patient and check_password_hash(patient['Password'], password):
-                access_token = create_access_token(identity=login, additional_claims={"role": "patient"})
+            if patient and check_password_hash(patient[1], password):
+                access_token = create_access_token(identity=str(patient[0]), additional_claims={"role": "patient"})
                 return {'access_token': access_token}, 200
             else:
                 return {'message': 'Credenciais inválidas'}, 401
         except pyodbc.Error as e:
             return {'message': f'Erro ao fazer login: {str(e)}'}, 500
+        finally:
+            cursor.close()
+            cnxn.close()
+
+
+class PatientRegistration(Resource):
+    @jwt_required()
+    def post(self):
+        current_user = get_jwt_identity()
+        claims = get_jwt()
+        if claims.get('role') != 'professional':
+            return {'message': 'Acesso não autorizado'}, 403
+
+        data = request.get_json()
+
+        # Validações para cada campo
+        errors = {}
+
+        # Full Name
+        full_name = data.get('full_name')
+        if not full_name or len(full_name.strip()) < 3:
+            errors['full_name'] = 'Nome completo deve ter pelo menos 3 caracteres'
+
+        # Birth Date
+        birth_date = data.get('birth_date')
+        try:
+            datetime.strptime(birth_date, '%Y-%m-%d')
+        except ValueError:
+            errors['birth_date'] = 'Data de nascimento deve estar no formato YYYY-MM-DD'
+
+        # Gender
+        gender = data.get('gender')
+        if gender not in ['M', 'F', 'O']:
+            errors['gender'] = 'Gênero deve ser M, F ou O'
+
+        # Email
+        email = data.get('email')
+        if not re.match(r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$', email):
+            errors['email'] = 'Formato de e-mail inválido'
+
+        # Password
+        password = data.get('password')
+        password_valid, password_message = validate_password(password)
+        if not password_valid:
+            errors['password'] = password_message
+
+        # Mobile
+        mobile = data.get('mobile')
+        if not re.match(r'^[0-9]{11}$', mobile):
+            errors['mobile'] = 'O número de telefone deve ter 11 dígitos numéricos'
+
+        # CPF
+        cpf = data.get('cpf')
+        if not re.match(r'^[0-9]{11}$', cpf):
+            errors['cpf'] = 'CPF deve ter 11 dígitos numéricos'
+
+        # Weight
+        weight = data.get('weight')
+        try:
+            weight = float(weight)
+            if weight <= 0 or weight > 500:  # Assumindo um limite máximo de 500 kg
+                errors['weight'] = 'Peso deve ser um número positivo e menor que 500'
+        except (ValueError, TypeError):
+            errors['weight'] = 'Peso deve ser um número válido'
+
+        # Height
+        height = data.get('height')
+        try:
+            height = float(height)
+            if height <= 0 or height > 3:  # Assumindo que a altura está em metros e o máximo é 3 metros
+                errors['height'] = 'Altura deve ser um número positivo entre 0 e 3'
+        except (ValueError, TypeError):
+            errors['height'] = 'Altura deve ser um número válido'
+
+        # Note (opcional)
+        note = data.get('note')
+
+        if errors:
+            return {'message': 'Erros de validação', 'errors': errors}, 400
+
+        hashed_password = generate_password_hash(password, method='pbkdf2:sha256:100000', salt_length=8)
+
+        cnxn = connect_database()
+        cursor = cnxn.cursor()
+        try:
+            cursor.execute("SELECT * FROM tb_patients WHERE email = %s OR cpf = %s OR mobile = %s",
+                           (email, cpf, mobile))
+            if cursor.fetchone():
+                return {'message': 'Email, CPF ou número de telefone já registrado'}, 409
+
+            cursor.execute("""
+                INSERT INTO tb_patients (full_name, birth_date, gender, email, password, mobile, cpf, weight, height, note, professional_id, created_at, updated_at) 
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW())
+            """, (
+            full_name, birth_date, gender, email, hashed_password, mobile, cpf, weight, height, note, current_user))
+
+            cnxn.commit()
+            return {'message': 'Paciente registrado com sucesso'}, 201
+        except pyodbc.IntegrityError as e:
+            return {'message': f'Erro de integridade de dados: {str(e)}'}, 409
+        except pyodbc.Error as e:
+            return {'message': f'Erro ao registrar paciente: {str(e)}'}, 500
         finally:
             cursor.close()
             cnxn.close()
