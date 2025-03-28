@@ -76,7 +76,7 @@ def create_app():
     api.add_resource(ProtectedResource, '/protected')
     api.add_resource(PublicResource, '/public')
     api.add_resource(TestConnection, '/test-connection')
-
+    api.add_resource(PatientList, '/patients'
     # Tratamento de erros
     @app.errorhandler(404)
     def not_found(error):
