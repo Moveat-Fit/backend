@@ -6,7 +6,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, get_jwt
 from app.utils.db import connect_database
 from datetime import datetime
-
+import mysql.connector
 
 def validate_password(password):
     """
@@ -228,6 +228,48 @@ class PatientRegistration(Resource):
             return {'message': f'Erro de integridade de dados: {str(e)}'}, 409
         except pyodbc.Error as e:
             return {'message': f'Erro ao registrar paciente: {str(e)}'}, 500
+        finally:
+            cursor.close()
+            cnxn.close()
+
+
+class PatientList(Resource):
+    @jwt_required()
+    def get(self):
+        current_user = get_jwt_identity()
+        print(f"current_user: {current_user}")
+        cnxn = connect_database()
+        cursor = cnxn.cursor(dictionary=True)
+
+        try:
+            query = """
+                SELECT 
+                    id,
+                    full_name,
+                    DATE_FORMAT(birth_date, '%Y-%m-%d') AS birth_date,
+                    gender,
+                    email,
+                    mobile,
+                    cpf,
+                    CAST(weight AS CHAR) AS weight,
+                    CAST(height AS CHAR) AS height,
+                    note,
+                    professional_id,
+                    DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s') AS created_at,
+                    DATE_FORMAT(updated_at, '%Y-%m-%d %H:%i:%s') AS updated_at
+                FROM tb_patients
+                WHERE professional_id = %(professional_id)s
+            """
+            params = {'professional_id': current_user}
+            cursor.execute(query, params)
+            patients = cursor.fetchall()
+
+            return {'patients': patients}, 200
+
+        except mysql.connector.Error as e:
+            print(f"MySQL Error: {e}")
+            return {'message': f'Erro ao buscar pacientes: {str(e)}'}, 500
+
         finally:
             cursor.close()
             cnxn.close()
