@@ -84,5 +84,7 @@ def create_tables(cnxn):
         cnxn.close()
 
 
+
+
 connection = connect_database()
 create_tables(connection)

@@ -1,25 +1,18 @@
 import pyodbc
 from flask_restful import Resource
-from app.utils.db import connect_database  
+from app.utils.db import connect_database
 import datetime
+
 class TestConnection(Resource):
     def get(self):
         connection = None
         cursor = None
         try:
-            connection = connect_database  ()
+            connection = connect_database()
             cursor = connection.cursor()
-            cursor.execute("SELECT * FROM tb_Users")
-            columns = [column[0] for column in cursor.description]
-            results = []
-            for row in cursor.fetchall():
-                row_dict = dict(zip(columns, row))
-                # Convert datetime objects to string using isoformat()
-                for key, value in row_dict.items():
-                    if isinstance(value, datetime.datetime):
-                        row_dict[key] = value.isoformat()
-                results.append(row_dict)
-            return {'data': results}, 200
+            cursor.execute("SELECT 1")  # Executa uma consulta simples para testar a conexão
+            cursor.fetchone()  # Busca o resultado para garantir que a consulta foi executada
+            return {'message': 'Conexão com o banco de dados bem-sucedida'}, 200
         except pyodbc.Error as e:
             return {'error': str(e)}, 500
         finally:

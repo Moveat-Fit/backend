@@ -36,14 +36,24 @@ def validate_password(password):
 class ProfessionalRegistration(Resource):
     def post(self):
         data = request.get_json()
-        full_name = data.get('full_name')
-        email = data.get('email')
-        password = data.get('password')
-        cpf = data.get('cpf')
-        phone = data.get('phone')
-        regional_council_type = data.get('regional_council_type')
-        regional_council = data.get('regional_council')
 
+        # Campos obrigatórios
+        required_fields = ['full_name', 'email', 'password', 'cpf', 'phone', 'regional_council_type', 'regional_council']
+        missing_or_empty = [field for field in required_fields if not data.get(field)]
+
+        if missing_or_empty:
+            return {'message': 'Campos obrigatórios ausentes ou inválidos', 'missing_fields': missing_or_empty}, 400
+
+        # Extração e validação de cada campo
+        full_name = data['full_name']
+        email = data['email']
+        password = data['password']
+        cpf = data['cpf']
+        phone = data['phone']
+        regional_council_type = data['regional_council_type']
+        regional_council = data['regional_council']
+
+        # Validações de formato
         if not re.match(r'^[0-9]{11}$', cpf):
             return {'message': 'Formato de CPF inválido'}, 400
         if not re.match(r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$', email):
@@ -51,12 +61,15 @@ class ProfessionalRegistration(Resource):
         if len(phone) != 11:
             return {'message': 'O número de telefone deve ter 11 caracteres'}, 400
 
+        # Validação da senha
         password_valid, password_message = validate_password(password)
         if not password_valid:
             return {'message': password_message}, 400
 
+        # Hash da senha
         hashed_password = generate_password_hash(password, method='pbkdf2:sha256:100000', salt_length=8)
 
+        # Conexão com o banco de dados e inserção
         cnxn = connect_database()
         cursor = cnxn.cursor()
         try:
@@ -72,10 +85,9 @@ class ProfessionalRegistration(Resource):
             cnxn.commit()
             access_token = create_access_token(identity=email, additional_claims={"role": "professional"})
             return {'message': 'Profissional registrado com sucesso', 'access_token': access_token}, 201
-        except pyodbc.IntegrityError as e:
-            return {'message': f'Erro de integridade de dados: {str(e)}'}, 409
-        except pyodbc.Error as e:
-            return {'message': f'Erro ao registrar profissional: {str(e)}'}, 500
+        except Exception as e:
+            cnxn.rollback()
+            return {'message': str(e)}, 500
         finally:
             cursor.close()
             cnxn.close()
@@ -152,9 +164,9 @@ class PatientRegistration(Resource):
         # Birth Date
         birth_date = data.get('birth_date')
         try:
-            datetime.strptime(birth_date, '%Y-%m-%d')
+            datetime.strptime(birth_date, '%d-%m-%Y')
         except ValueError:
-            errors['birth_date'] = 'Data de nascimento deve estar no formato YYYY-MM-DD'
+            errors['birth_date'] = 'Data de nascimento deve estar no formato DD/MM/YYYY'
 
         # Gender
         gender = data.get('gender')
