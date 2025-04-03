@@ -1,88 +1,134 @@
 # API de Gerenciamento de Usuários
-Esta API fornece endpoints para o registro de usuários, autenticação e acesso a recursos protegidos e públicos utilizando Flask, Flask-RESTful e JWT.
+ Esta API fornece endpoints para o registro de profissionais e pacientes, autenticação e acesso a recursos protegidos e públicos utilizando Flask, Flask-RESTful e JWT.
 
-## Configuração e Dependências
+# Configuração e Dependências
 Flask: Framework web para construir aplicações web.
 
 Flask-RESTful: Extensão para a criação de APIs RESTful de forma simples.
 
 Flask-JWT-Extended: Gerenciamento de tokens JWT para autenticação.
 
-Flask-CORS: Suporte a Cross-Origin Resource Sharing, permitindo que recursos restritos em uma página web sejam recuperados por outro domínio.
+Flask-CORS: Suporte a Cross-Origin Resource Sharing.
 
-pyodbc: Conexão com banco de dados SQL Server.
+mysql-connector-python: Conexão com banco de dados MySQL.
 
 python-dotenv: Carregamento de variáveis de ambiente de um arquivo .env.
 
 werkzeug.security: Utilitários de segurança para hashing de senhas.
 
-## Inicialização da Aplicação
-A aplicação é inicializada com as seguintes configurações, que incluem habilitação de CORS, configuração de JWT e criação de endpoints da API:
-
+# Conexão com o Banco de Dados
+A API utiliza um banco de dados MySQL. O arquivo db.py gerencia a conexão:
 
 ```python
-from flask import Flask
+import mysql.connector
+from dotenv import load_dotenv
+import os
+
+def connect_database():
+    load_dotenv()
+    try:
+        cnxn = mysql.connector.connect(
+            host=os.getenv("MYSQL_HOST"),
+            user=os.getenv("MYSQL_USER"),
+            password=os.getenv("MYSQL_PASSWORD"),
+            database=os.getenv("MYSQL_DB"),
+        )
+        print("Conexão estabelecida com MySQL.")
+        return cnxn
+    except mysql.connector.Error as e:
+        print("Erro ao conectar ao MySQL", e)
+        return None
+ ```
+# Inicialização da Aplicação
+A aplicação é inicializada com as seguintes configurações, incluindo habilitação de CORS, configuração de JWT e criação de endpoints da API:
+
+```python
+from flask import Flask, jsonify
+
 from flask_restful import Api
+
 from flask_jwt_extended import JWTManager
+
 from flask_cors import CORS
-from app.config import Config
-from app.resources import UserRegistration, UserLogin, ProtectedResource, PublicResource, TestConnection
+
+from .config import Config
+
+from .resources.user import ProfessionalRegistration, ProfessionalLogin, PatientLogin, PatientRegistration
+
+from .resources.protected import ProtectedResource
+
+from .resources.public import PublicResource
+
+from .resources.test_connection import TestConnection
 
 def create_app():
-    app = Flask(__name__)
+    app = Flask(_name_)
     app.config.from_object(Config)
-    CORS(app)  # Habilita CORS para todas as rotas
-    jwt = JWTManager(app)  # Configuração do JWT
+    CORS(app)
+    jwt = JWTManager(app)
     api = Api(app)
 
     # Adicionando recursos à API
-    api.add_resource(UserRegistration, '/register')
-    api.add_resource(UserLogin, '/login')
+    api.add_resource(ProfessionalRegistration, '/register')
+    api.add_resource(ProfessionalLogin, '/professional')
+    api.add_resource(PatientLogin, '/patient')
+    api.add_resource(PatientRegistration, '/register/patient')
     api.add_resource(ProtectedResource, '/protected')
     api.add_resource(PublicResource, '/public')
     api.add_resource(TestConnection, '/test-connection')
+    api.add_resource(PatientList, '/patients'
+    # Tratamento de erros
+    @app.errorhandler(404)
+    def not_found(error):
+        return jsonify(error="Endpoint não encontrado"), 404
+
+    @app.errorhandler(500)
+    def internal_error(error):
+        return jsonify(error="Erro interno do servidor"), 500
 
     return app
- ```
-## Recursos da API
-### 1. UserRegistration (POST /register)
-Registra um novo usuário no sistema.
+    
+    #CMD
+    #Command:  CD C:\Users\<seu usuario>\diretorio
+    python run.py
+   ```
+# Recursos da API
+1. Registro de Profissional (POST /register)
+Registra um novo profissional no sistema.
 
-### Parâmetros (JSON):
-name: Nome do usuário.
+Parâmetros (JSON):
+full_name: Nome completo do profissional.
 
-email: Email do usuário.
+email: Email do profissional.
 
-password: Senha do usuário.
+password: Senha do profissional.
 
-cpf: CPF do usuário.
+cpf: CPF do profissional.
 
-cellphone: Número de celular.
+phone: Número de telefone.
 
-crn: Número CRN (profissional).
+regional_council_type: Tipo de conselho regional (CRN/CREF).
 
-cref: Número CREF (profissional).
+regional_council: Número do conselho regional.
 
-user_type: Tipo de usuário.
-
-## Respostas:
-201: Usuário registrado com sucesso.
+Respostas:
+201: Profissional registrado com sucesso.
 
 400: Campos obrigatórios ausentes ou inválidos.
 
-409: Erro de integridade de dados (usuário já registrado).
+409: Email, CPF ou telefone já registrado.
 
 500: Erro interno do servidor.
 
-### 2. UserLogin (POST /login)
-Autentica um usuário e retorna um token JWT.
+2. Login de Profissional (POST /professional)
+Autentica um profissional e retorna um token JWT.
 
-### Parâmetros (JSON):
-login: Email, CPF ou celular do usuário.
+Parâmetros (JSON):
+login: Email, CPF ou telefone do profissional.
 
-password: Senha do usuário.
+password: Senha do profissional.
 
-## Respostas:
+Respostas:
 200: Login bem-sucedido, retorna token JWT.
 
 400: Credenciais incompletas.
@@ -91,48 +137,92 @@ password: Senha do usuário.
 
 500: Erro interno do servidor.
 
-### 3. ProtectedResource (GET /protected)
+3. Registro de Paciente (POST /register/patient)
+Registra um paciente no sistema (apenas para profissionais autenticados).
+
+Parâmetros (JSON):
+full_name: Nome completo do paciente.
+
+birth_date: Data de nascimento (YYYY-MM-DD).
+
+gender: Gênero (M, F ou O).
+
+email: Email do paciente.
+
+password: Senha do paciente.
+
+mobile: Número de telefone (11 dígitos).
+
+cpf: CPF do paciente (11 dígitos).
+
+weight: Peso do paciente (kg).
+
+height: Altura do paciente (metros).
+
+note: Nota opcional.
+
+Requer autenticação JWT de um profissional.
+
+Respostas:
+201: Paciente registrado com sucesso.
+
+400: Erros de validação nos campos.
+
+409: Email, CPF ou telefone já registrado.
+
+403: Acesso não autorizado (se não for um profissional).
+
+500: Erro interno do servidor.
+
+4. Login de Paciente (POST /patient)
+Autentica um paciente e retorna um token JWT.
+
+Parâmetros (JSON):
+login: Email, CPF ou telefone do paciente.
+
+password: Senha do paciente.
+
+Respostas:
+200: Login bem-sucedido, retorna token JWT.
+
+400: Credenciais incompletas.
+
+401: Credenciais inválidas.
+
+500: Erro interno do servidor.
+
+5. Rota Protegida (GET /protected)
 Exemplo de rota protegida que requer autenticação JWT.
 
-## Respostas:
+Respostas:
 200: Retorna a identidade do usuário logado.
 
 401: Acesso não autorizado (token ausente ou inválido).
 
-### 4. PublicResource (GET /public)
+6. Rota Pública (GET /public)
 Exemplo de rota pública acessível sem autenticação.
 
-## Respostas:
+Respostas:
 200: Mensagem de rota pública.
-### 5. TestConnection (GET /test-connection)
+
+7. Teste de Conexão com o Banco (GET /test-connection)
 Testa a conexão com o banco de dados.
 
-## Respostas:
+Respostas:
 200: Conexão estabelecida com sucesso.
 
 500: Falha na conexão com o banco de dados.
 
-## Tratamento de Erros
-404: Endpoint não encontrado.
-
-500: Erro interno do servidor.
-
 ## Segurança
-Senhas são armazenadas com hash usando werkzeug.security.
+Senhas são armazenadas com hash utilizando werkzeug.security.
 
 Autenticação baseada em tokens JWT.
 
 CORS habilitado para todas as rotas.
 
-## Execução
-Para iniciar a aplicação em modo de desenvolvimento:
-
-
-```python
-if __name__ == '__main__':
-    app.run(debug=True)
-```
-# Notas Importantes
+## Notas Importantes
 A chave secreta JWT deve ser alterada para uma chave segura em ambiente de produção.
+
 As credenciais do banco de dados são carregadas de variáveis de ambiente para maior segurança.
-Certifique-se de que o ODBC Driver 18 for SQL Server está instalado e configurado corretamente.
+
+Certifique-se de que o MySQL está instalado e configurado corretamente.
