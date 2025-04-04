@@ -164,9 +164,9 @@ class PatientRegistration(Resource):
         # Birth Date
         birth_date = data.get('birth_date')
         try:
-            datetime.strptime(birth_date, '%d-%m-%Y')
+            datetime.strptime(birth_date, '%Y-%d-%m')
         except ValueError:
-            errors['birth_date'] = 'Data de nascimento deve estar no formato DD/MM/YYYY'
+            errors['birth_date'] = 'Data de nascimento deve estar no formato YYYY/DD/MM'
 
         # Gender
         gender = data.get('gender')
