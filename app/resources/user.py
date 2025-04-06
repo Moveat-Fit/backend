@@ -5,6 +5,11 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, get_jwt
 from app.utils.db import execute_query
 from datetime import datetime
+import logging
+
+def error_response(message, status_code):
+    return {'error': message}, status_code
+
 
 def validate_password(password):
     criteria = {
@@ -162,7 +167,7 @@ class PatientRegistration(Resource):
 
         birth_date = data.get('birth_date')
         try:
-            datetime.strptime(birth_date, '%Y-%m-%d')
+            birth_date = datetime.strptime(birth_date, '%Y-%m-%d').date()
         except ValueError:
             errors['birth_date'] = 'Data de nascimento deve estar no formato YYYY-MM-DD'
 
@@ -205,6 +210,8 @@ class PatientRegistration(Resource):
 
         note = data.get('note')
 
+        if errors:
+            return {'message': 'Erros de validação', 'errors': errors}, 400
 
         hashed_password = generate_password_hash(password, method='pbkdf2:sha256:100000', salt_length=8)
 
@@ -224,15 +231,27 @@ class PatientRegistration(Resource):
         except Exception as e:
             return {'message': f'Erro ao registrar paciente: {str(e)}'}, 500
 
+
+
+
+# Configuração do logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
+
+
+def error_response(message, status_code):
+    return {'error': message}, status_code
+
+
 class PatientList(Resource):
-    @jwt_required()
     def get(self, professional_id):
+        logger.debug(f"Received request for professional_id: {professional_id}")
         try:
             query = """
                 SELECT
                     id,
                     full_name,
-                    DATE_FORMAT(birth_date, '%Y-%m-%d') AS birth_date,
+                    DATE_FORMAT(birth_date, '%%Y-%%m-%%d') AS birth_date,
                     gender,
                     email,
                     mobile,
@@ -241,12 +260,21 @@ class PatientList(Resource):
                     CAST(height AS CHAR) AS height,
                     note,
                     professional_id,
-                    DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s') AS created_at,
-                    DATE_FORMAT(updated_at, '%Y-%m-%d %H:%i:%s') AS updated_at
+                    DATE_FORMAT(created_at, '%%Y-%%m-%%d %%H:%%i:%%s') AS created_at,
+                    DATE_FORMAT(updated_at, '%%Y-%%m-%%d %%H:%%i:%%s') AS updated_at
                 FROM tb_patients
-                WHERE professional_id = %s
+                WHERE professional_id = %(professional_id)s
             """
-            patients = execute_query(query, (professional_id,))
-            return {'patients': patients}, 200
+            logger.debug(f"Executing query with professional_id: {professional_id}")
+            patients = execute_query(query, {'professional_id': professional_id})
+            logger.debug(f"Query result: {patients}")
+
+            if patients:
+                return {'patients': patients}, 200
+            else:
+                return {'message': 'Nenhum paciente encontrado para este profissional'}, 404
         except Exception as e:
+            logger.error(f"Error occurred: {str(e)}", exc_info=True)
             return error_response(f'Erro ao buscar pacientes: {str(e)}', 500)
+
+

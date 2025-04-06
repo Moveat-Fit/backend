@@ -37,9 +37,18 @@ def get_db_connection():
 def execute_query(query, params=None):
     with get_db_connection() as connection:
         with connection.cursor(dictionary=True) as cursor:
-            cursor.execute(query, params or ())
-            if query.strip().upper().startswith("SELECT"):
-                return cursor.fetchall()
-            else:
-                connection.commit()
-                return cursor.rowcount
+            try:
+                if params:
+                    cursor.execute(query, params)
+                else:
+                    cursor.execute(query)
+                if query.strip().upper().startswith("SELECT"):
+                    return cursor.fetchall()
+                else:
+                    connection.commit()
+                    return cursor.rowcount
+            except mysql.connector.Error as err:
+                print(f"Error: {err}")
+                print(f"Query: {query}")
+                print(f"Params: {params}")
+                raise
