@@ -84,10 +84,24 @@ class ProfessionalLogin(Resource):
             return {'message': 'E-mail e senha são obrigatórios'}, 400
 
         try:
-            query = "SELECT id, password FROM tb_professionals WHERE email = %s OR cpf = %s OR phone = %s"
+            query = """
+                SELECT id, full_name, email, password, cpf, phone, regional_council_type, regional_council
+                FROM tb_professionals
+                WHERE email = %s OR cpf = %s OR phone = %s
+            """
             result = execute_query(query, (login, login, login))
             if result and check_password_hash(result[0]['password'], password):
-                access_token = create_access_token(identity=str(result[0]['id']), additional_claims={"role": "professional"})
+                user_data = {
+                    'id': str(result[0]['id']),
+                    'full_name': result[0]['full_name'],
+                    'email': result[0]['email'],
+                    'cpf': result[0]['cpf'],
+                    'phone': result[0]['phone'],
+                    'regional_council_type': result[0]['regional_council_type'],
+                    'regional_council': result[0]['regional_council'],
+                    'role': 'professional'
+                }
+                access_token = create_access_token(identity=str(result[0]['id']), additional_claims=user_data)
                 return {'access_token': access_token}, 200
             else:
                 return {'message': 'Credenciais inválidas'}, 401
@@ -104,10 +118,26 @@ class PatientLogin(Resource):
             return {'message': 'Login e senha são obrigatórios'}, 400
 
         try:
-            query = "SELECT id, password FROM tb_patients WHERE email = %s OR cpf = %s OR mobile = %s"
+            query = """
+                SELECT id, full_name, birth_date, gender, email, password, mobile, cpf, weight, height
+                FROM tb_patients
+                WHERE email = %s OR cpf = %s OR mobile = %s
+            """
             result = execute_query(query, (login, login, login))
             if result and check_password_hash(result[0]['password'], password):
-                access_token = create_access_token(identity=str(result[0]['id']), additional_claims={"role": "patient"})
+                user_data = {
+                    'id': str(result[0]['id']),
+                    'full_name': result[0]['full_name'],
+                    'birth_date': result[0]['birth_date'].isoformat() if result[0]['birth_date'] else None,
+                    'gender': result[0]['gender'],
+                    'email': result[0]['email'],
+                    'mobile': result[0]['mobile'],
+                    'cpf': result[0]['cpf'],
+                    'weight': float(result[0]['weight']) if result[0]['weight'] else None,
+                    'height': float(result[0]['height']) if result[0]['height'] else None,
+                    'role': 'patient'
+                }
+                access_token = create_access_token(identity=str(result[0]['id']), additional_claims=user_data)
                 return {'access_token': access_token}, 200
             else:
                 return {'message': 'Credenciais inválidas'}, 401
@@ -175,8 +205,6 @@ class PatientRegistration(Resource):
 
         note = data.get('note')
 
-        if errors:
-            return {'message': 'Erros de validação', 'errors': errors}, 400
 
         hashed_password = generate_password_hash(password, method='pbkdf2:sha256:100000', salt_length=8)
 
@@ -198,13 +226,10 @@ class PatientRegistration(Resource):
 
 class PatientList(Resource):
     @jwt_required()
-    def get(self):
-        current_user = get_jwt_identity()
-        print(f"current_user: {current_user}")
-
+    def get(self, professional_id):
         try:
             query = """
-                SELECT 
+                SELECT
                     id,
                     full_name,
                     DATE_FORMAT(birth_date, '%Y-%m-%d') AS birth_date,
@@ -221,10 +246,7 @@ class PatientList(Resource):
                 FROM tb_patients
                 WHERE professional_id = %s
             """
-            patients = execute_query(query, (current_user,))
-
+            patients = execute_query(query, (professional_id,))
             return {'patients': patients}, 200
-
         except Exception as e:
-            print(f"Error: {e}")
-            return {'message': f'Erro ao buscar pacientes: {str(e)}'}, 500
+            return error_response(f'Erro ao buscar pacientes: {str(e)}', 500)
