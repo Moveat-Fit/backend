@@ -7,10 +7,6 @@ from app.utils.db import execute_query
 from datetime import datetime
 import logging
 
-def error_response(message, status_code):
-    return {'error': message}, status_code
-
-
 def validate_password(password):
     criteria = {
         'length': {'regex': r'.{8,}', 'message': 'A senha deve ter pelo menos 8 caracteres'},
@@ -20,26 +16,20 @@ def validate_password(password):
         'special': {'regex': r'[!@#$%^&*(),.?":{}|<>]', 'message': 'A senha deve conter pelo menos um caractere especial'}
     }
 
-    error_messages = []
-
     for key, value in criteria.items():
         if not re.search(value['regex'], password):
-            error_messages.append(value['message'])
+            return False, value['message']
 
-    if not error_messages:
-        return True, 'Senha válida'
-    else:
-        return False, ' '.join(error_messages)
+    return True, 'Senha válida'
 
 class ProfessionalRegistration(Resource):
     def post(self):
         data = request.get_json()
 
         required_fields = ['full_name', 'email', 'password', 'cpf', 'phone', 'regional_council_type', 'regional_council']
-        missing_or_empty = [field for field in required_fields if not data.get(field)]
-
-        if missing_or_empty:
-            return {'message': 'Campos obrigatórios ausentes ou inválidos', 'missing_fields': missing_or_empty}, 400
+        for field in required_fields:
+            if not data.get(field):
+                return {'message': f'O campo {field} é obrigatório'}, 400
 
         full_name = data['full_name']
         email = data['email']
@@ -159,59 +149,54 @@ class PatientRegistration(Resource):
 
         data = request.get_json()
 
-        errors = {}
-
         full_name = data.get('full_name')
         if not full_name or len(full_name.strip()) < 3:
-            errors['full_name'] = 'Nome completo deve ter pelo menos 3 caracteres'
+            return {'message': 'Nome completo deve ter pelo menos 3 caracteres'}, 400
 
         birth_date = data.get('birth_date')
         try:
             birth_date = datetime.strptime(birth_date, '%Y-%m-%d').date()
         except ValueError:
-            errors['birth_date'] = 'Data de nascimento deve estar no formato YYYY-MM-DD'
+            return {'message': 'Data de nascimento deve estar no formato YYYY-MM-DD'}, 400
 
         gender = data.get('gender')
         if gender not in ['M', 'F', 'O']:
-            errors['gender'] = 'Gênero deve ser M, F ou O'
+            return {'message': 'Gênero deve ser M, F ou O'}, 400
 
         email = data.get('email')
         if not re.match(r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$', email):
-            errors['email'] = 'Formato de e-mail inválido'
+            return {'message': 'Formato de e-mail inválido'}, 400
 
         password = data.get('password')
         password_valid, password_message = validate_password(password)
         if not password_valid:
-            errors['password'] = password_message
+            return {'message': password_message}, 400
 
         mobile = data.get('mobile')
         if not re.match(r'^[0-9]{11}$', mobile):
-            errors['mobile'] = 'O número de telefone deve ter 11 dígitos numéricos'
+            return {'message': 'O número de telefone deve ter 11 dígitos numéricos'}, 400
 
         cpf = data.get('cpf')
         if not re.match(r'^[0-9]{11}$', cpf):
-            errors['cpf'] = 'CPF deve ter 11 dígitos numéricos'
+            return {'message': 'CPF deve ter 11 dígitos numéricos'}, 400
 
         weight = data.get('weight')
         try:
             weight = float(weight)
             if weight <= 0 or weight > 500:
-                errors['weight'] = 'Peso deve ser um número positivo e menor que 500'
+                return {'message': 'Peso deve ser um número positivo e menor que 500'}, 400
         except (ValueError, TypeError):
-            errors['weight'] = 'Peso deve ser um número válido'
+            return {'message': 'Peso deve ser um número válido'}, 400
 
         height = data.get('height')
         try:
             height = float(height)
             if height <= 0 or height > 3:
-                errors['height'] = 'Altura deve ser um número positivo entre 0 e 3'
+                return {'message': 'Altura deve ser um número positivo entre 0 e 3'}, 400
         except (ValueError, TypeError):
-            errors['height'] = 'Altura deve ser um número válido'
+            return {'message': 'Altura deve ser um número válido'}, 400
 
         note = data.get('note')
-
-        if errors:
-            return {'message': 'Erros de validação', 'errors': errors}, 400
 
         hashed_password = generate_password_hash(password, method='pbkdf2:sha256:100000', salt_length=8)
 
@@ -231,17 +216,9 @@ class PatientRegistration(Resource):
         except Exception as e:
             return {'message': f'Erro ao registrar paciente: {str(e)}'}, 500
 
-
-
-
 # Configuração do logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
-
-
-def error_response(message, status_code):
-    return {'error': message}, status_code
-
 
 class PatientList(Resource):
     def get(self, professional_id):
@@ -251,7 +228,7 @@ class PatientList(Resource):
                 SELECT
                     id,
                     full_name,
-                    DATE_FORMAT(birth_date, '%%Y-%%m-%%d') AS birth_date,
+                    DATE_FORMAT(birth_date, '%Y-%m-%d') AS birth_date,
                     gender,
                     email,
                     mobile,
@@ -260,8 +237,8 @@ class PatientList(Resource):
                     CAST(height AS CHAR) AS height,
                     note,
                     professional_id,
-                    DATE_FORMAT(created_at, '%%Y-%%m-%%d %%H:%%i:%%s') AS created_at,
-                    DATE_FORMAT(updated_at, '%%Y-%%m-%%d %%H:%%i:%%s') AS updated_at
+                    DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s') AS created_at,
+                    DATE_FORMAT(updated_at, '%Y-%m-%d %H:%i:%s') AS updated_at
                 FROM tb_patients
                 WHERE professional_id = %(professional_id)s
             """
@@ -275,6 +252,4 @@ class PatientList(Resource):
                 return {'message': 'Nenhum paciente encontrado para este profissional'}, 404
         except Exception as e:
             logger.error(f"Error occurred: {str(e)}", exc_info=True)
-            return error_response(f'Erro ao buscar pacientes: {str(e)}', 500)
-
-
+            return {'message': f'Erro ao buscar pacientes: {str(e)}'}, 500
