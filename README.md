@@ -56,10 +56,12 @@ O servidor estará disponível em `http://localhost:5000`.
 - `POST /professional`: Login de profissionais
 - `POST /patient`: Login dex pacientes
 - `POST /register/patient`: Registro de pacientes (requer autenticação de profissional)
+- `POST /deletePatient/<patient_id>`: Deleta pacientes de um profissional específico
 - `GET /protected`: Rota protegida (requer autenticação)
 - `GET /public`: Rota pública
 - `GET /test-connection`: Testa a conexão com o banco de dados
 - `GET /patients/<professional_id>`: Lista pacientes de um profissional específico
+
 
 
 
