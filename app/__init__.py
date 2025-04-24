@@ -3,7 +3,7 @@ from flask_restful import Api
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
 from .config import Config
-from .resources.user import ProfessionalRegistration, ProfessionalLogin, PatientLogin, PatientRegistration, PatientList
+from .resources.user import ProfessionalRegistration, ProfessionalLogin, PatientLogin, PatientRegistration, PatientList, DeletePatient
 from .resources.protected import ProtectedResource
 from .resources.public import PublicResource
 from .resources.test_connection import TestConnection
@@ -23,6 +23,7 @@ def create_app():
     api.add_resource(PublicResource, '/public')
     api.add_resource(TestConnection, '/test-connection')
     api.add_resource(PatientList, '/patients/<int:professional_id>')
+    api.add_resource(DeletePatient, '/deletePatient/<int:id>')
 
     # Tratamento de erros
     @app.errorhandler(404)

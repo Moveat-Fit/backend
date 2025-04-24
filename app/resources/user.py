@@ -253,3 +253,22 @@ class PatientList(Resource):
         except Exception as e:
             logger.error(f"Error occurred: {str(e)}", exc_info=True)
             return {'message': f'Erro ao buscar pacientes: {str(e)}'}, 500
+
+class DeletePatient(Resource):
+    @jwt_required()
+    def delete(self, id):
+        current_user = get_jwt_identity()
+        try:
+            # Verificar se o paciente pertence ao profissional logado
+            check_query = "SELECT id FROM tb_patients WHERE id = %s AND professional_id = %s"
+            result = execute_query(check_query, (id, current_user))
+            if not result:
+                return {'message': 'Paciente não encontrado ou não pertence ao profissional'}, 404
+
+            # Deletar o paciente
+            delete_query = "DELETE FROM tb_patients WHERE id = %s"
+            execute_query(delete_query, (id,))
+            return {'message': 'Paciente deletado com sucesso'}, 200
+        except Exception as e:
+            return {'message': f'Erro ao deletar paciente: {str(e)}'}, 500
+

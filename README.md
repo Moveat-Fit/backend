@@ -54,7 +54,7 @@ O servidor estará disponível em `http://localhost:5000`.
 
 - `POST /register`: Registro de profissionais
 - `POST /professional`: Login de profissionais
-- `POST /patient`: Login de pacientes
+- `POST /patient`: Login dex pacientes
 - `POST /register/patient`: Registro de pacientes (requer autenticação de profissional)
 - `GET /protected`: Rota protegida (requer autenticação)
 - `GET /public`: Rota pública
