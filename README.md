@@ -19,33 +19,65 @@
 ## Funcionalidades
 
 1. Registro e login de profissionais de saúde
+
 2. Registro e login de pacientes
 3. Listagem de pacientes por profissional
-4. Rotas protegidas e públicas
-5. Teste de conexão com o banco de dados
+4. Deleção de pacientes por profissional
+5. Alteração dos dados de pacientes por profissional
+6. Rotas protegidas e públicas
+7. Teste de conexão com o banco de dados
 
 ## Configuração
 
-1. Crie um arquivo `.env` na raiz do projeto com as seguintes variáveis:
-MYSQL_HOST=seu_host MYSQL_USER=seu_usuario MYSQL_PASSWORD=sua_senha MYSQL_DB=seu_banco_de_dados JWT_SECRET_KEY=sua_chave_secreta
+#### 1. Crie um arquivo `.env` na raiz do projeto com as seguintes variáveis:
+```
+MYSQL_HOST=seu_host 
+
+MYSQL_USER=seu_usuario 
+
+MYSQL_PASSWORD=sua_senha 
+
+MYSQL_DB=seu_banco_de_dados 
+
+JWT_SECRET_KEY=sua_chave_secreta
+```
 
 
-
-2. Instale as dependências:
+#### 2. Instale as dependências:
+```
 pip install -r requirements.txt
+```
 
-
-
-3. Execute o script para criar as tabelas no banco de dados:
-python -c "from app.utils.schema import create_tables, connect_database; create_tables(connect_database())"
 
 
 
 ## Executando o Projeto
 
-Para iniciar o servidor de desenvolvimento:
+Para iniciar o servidor de desenvolvimento, execute:
+```
 python run.py
+```
 
+Este código acima realiza duas tarefas principais: inicializa o banco de dados e suas operações e executa a aplicação Flask.
+
+```
+from app import create_app
+from app.utils.schema import connect_database, create_tables
+
+app = create_app()
+
+# Função para inicializar o banco de dados
+def initialize_database():
+    connection = connect_database()
+    if connection:
+        create_tables(connection)
+
+if __name__ == "__main__":
+    # Inicializa o banco de dados antes de iniciar o app
+    initialize_database()
+    app.run(debug=True)
+```
+Em resumo, o código configura e inicia o ambiente necessário para a aplicação funcionar, garantindo que o banco de dados esteja pronto antes de iniciar o servidor.
 
 
 O servidor estará disponível em `http://localhost:5000`.
@@ -54,12 +86,187 @@ O servidor estará disponível em `http://localhost:5000`.
 
 - `POST /register`: Registro de profissionais
 - `POST /professional`: Login de profissionais
-- `POST /patient`: Login dex pacientes
+- `POST /patient`: Login de pacientes
 - `POST /register/patient`: Registro de pacientes (requer autenticação de profissional)
+- `POST /deletePatient/<patient_id>`: Deleta pacientes de um profissional específico
 - `GET /protected`: Rota protegida (requer autenticação)
 - `GET /public`: Rota pública
 - `GET /test-connection`: Testa a conexão com o banco de dados
 - `GET /patients/<professional_id>`: Lista pacientes de um profissional específico
 
 
+### POST /register
+Body da Requisição:
+
+
+```
+{
+  "full_name": "Nome Completo",
+  "email": "email@example.com",
+  "password": "Senha123!",
+  "cpf": "12345678901",
+  "phone": "11987654321",
+  "regional_council_type": "CRN",
+  "regional_council": "12345"
+}
+```
+#### Resposta Esperada:
+
+Sucesso (201):
+```
+{
+  "message": "Profissional registrado com sucesso",
+  "access_token": "<jwt_token>"
+}
+```
+Erro (400/409): Mensagens de erro específicas para validação ou conflitos de dados.
+
+### POST /professional
+Body da Requisição:
+
+
+```
+{
+  "login": "email@example.com",
+  "password": "Senha123!"
+}
+```
+#### Resposta Esperada:
+
+Sucesso (200):
+
+```
+{
+  "access_token": "<jwt_token>"
+}
+```
+
+Erro (401/400): Credenciais inválidas ou campos obrigatórios ausentes.
+### POST /patient
+Body da Requisição:
+
+
+```
+{
+  "login": "email@example.com",
+  "password": "Senha123!"
+}
+```
+#### Resposta Esperada:
+
+Sucesso (200):
+
+```
+{
+  "access_token": "<jwt_token>"
+}
+```
+Erro (401/400): Credenciais inválidas ou campos obrigatórios ausentes.
+### POST /register/patient
+Body da Requisição:
+
+
+```
+{
+  "full_name": "Nome Completo",
+  "birth_date": "1990-01-01",
+  "gender": "M",
+  "email": "email@example.com",
+  "password": "Senha123!",
+  "mobile": "11987654321",
+  "cpf": "12345678901",
+  "weight": 70.5,
+  "height": 1.75,
+  "note": "Nota sobre o paciente"
+}
+```
+#### Resposta Esperada:
+
+Sucesso (201):
+
+```
+{
+  "message": "Paciente registrado com sucesso"
+}
+```
+Erro (400/409): Mensagens de erro específicas para validação ou conflitos de dados.
+### DELETE /deletePatient/<patient_id>
+#### Resposta Esperada:
+
+Sucesso (200):
+
+```
+{
+  "message": "Paciente deletado com sucesso"
+}
+```
+Erro (404): Paciente não encontrado ou não pertence ao profissional.
+### PUT /patient/<id>/update
+Body da Requisição:
+
+
+```
+{
+  "full_name": "Novo Nome Completo",
+  "birth_date": "1990-01-01",
+  "gender": "M",
+  "email": "novoemail@example.com",
+  "mobile": "11987654321",
+  "cpf": "12345678901",
+  "weight": 70.5,
+  "height": 1.75,
+  "note": "Nota atualizada"
+}
+```
+#### Resposta Esperada:
+
+Sucesso (200):
+
+```
+{
+  "message": "Dados do paciente atualizados com sucesso"
+}
+```
+Erro (400/404): Mensagens de erro específicas para validação ou paciente não encontrado.
+### GET /patients/<professional_id>
+#### Resposta Esperada:
+
+Sucesso (200):
+
+```
+{
+  "patients": [
+    {
+      "id": 1,
+      "full_name": "Nome Completo",
+      "birth_date": "1990-01-01",
+      "gender": "M",
+      "email": "email@example.com",
+      "mobile": "11987654321",
+      "cpf": "12345678901",
+      "weight": "70.5",
+      "height": "1.75",
+      "note": "Nota sobre o paciente",
+      "professional_id": 1,
+      "created_at": "2023-01-01 12:00:00",
+      "updated_at": "2023-01-01 12:00:00"
+    }
+  ]
+}
+```
+Erro (404): Nenhum paciente encontrado para este profissional.
+### GET /protected
+#### Resposta Esperada:
+
+Sucesso (200): Conteúdo protegido acessível.
+Erro (401): Autenticação necessária.
+### GET /public
+#### Resposta Esperada:
+
+Sucesso (200): Conteúdo público acessível.
+### GET /test-connection
+#### Resposta Esperada:
+
+Sucesso (200): Conexão com o banco de dados bem-sucedida.
+Erro (500): Erro ao conectar ao banco de dados.
 

@@ -5,14 +5,13 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="4c752252-f94c-42fd-b948-9939f7ddd184" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.env" beforeDir="false" afterPath="$PROJECT_DIR$/.env" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/__init__.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/resources/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/resources/__init__.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/resources/user.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/resources/user.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/utils/schema.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/utils/schema.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/run.py" beforeDir="false" afterPath="$PROJECT_DIR$/run.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -51,6 +50,7 @@
     &quot;Python.schema.executor&quot;: &quot;Run&quot;,
     &quot;Python.security.executor&quot;: &quot;Run&quot;,
     &quot;Python.test_connection.executor&quot;: &quot;Run&quot;,
+    &quot;Python.teste.executor&quot;: &quot;Run&quot;,
     &quot;Python.teste_dotenv.executor&quot;: &quot;Run&quot;,
     &quot;Python.user.executor&quot;: &quot;Run&quot;,
     &quot;Python.users_api.executor&quot;: &quot;Run&quot;,

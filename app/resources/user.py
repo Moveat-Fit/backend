@@ -1,11 +1,13 @@
 from flask_restful import Resource
-from flask import request
+from flask import request, jsonify
 import re
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, get_jwt
 from app.utils.db import execute_query
-from datetime import datetime
+from datetime import datetime, date
 import logging
+from pydantic import BaseModel, Field, validator
+from typing import List, Optional
 
 def validate_password(password):
     criteria = {
@@ -272,3 +274,98 @@ class DeletePatient(Resource):
         except Exception as e:
             return {'message': f'Erro ao deletar paciente: {str(e)}'}, 500
 
+class UpdatePatient(Resource):
+    @jwt_required()
+    def put(self, id):
+        current_user = get_jwt_identity()
+        data = request.get_json()
+
+        try:
+            # Verificar se o paciente pertence ao profissional logado
+            check_query = "SELECT id FROM tb_patients WHERE id = %s AND professional_id = %s"
+            result = execute_query(check_query, (id, current_user))
+            if not result:
+                return {'message': 'Paciente não encontrado ou não pertence ao profissional'}, 404
+
+            # Validar e atualizar os campos fornecidos
+            fields_to_update = []
+            values = []
+
+            if 'full_name' in data:
+                full_name = data['full_name']
+                if not full_name or len(full_name.strip()) < 3:
+                    return {'message': 'Nome completo deve ter pelo menos 3 caracteres'}, 400
+                fields_to_update.append('full_name = %s')
+                values.append(full_name)
+
+            if 'birth_date' in data:
+                try:
+                    birth_date = datetime.strptime(data['birth_date'], '%Y-%m-%d').date()
+                    fields_to_update.append('birth_date = %s')
+                    values.append(birth_date)
+                except ValueError:
+                    return {'message': 'Data de nascimento deve estar no formato YYYY-MM-DD'}, 400
+
+            if 'gender' in data:
+                gender = data['gender']
+                if gender not in ['M', 'F', 'O']:
+                    return {'message': 'Gênero deve ser M, F ou O'}, 400
+                fields_to_update.append('gender = %s')
+                values.append(gender)
+
+            if 'email' in data:
+                email = data['email']
+                if not re.match(r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$', email):
+                    return {'message': 'Formato de e-mail inválido'}, 400
+                fields_to_update.append('email = %s')
+                values.append(email)
+
+            if 'mobile' in data:
+                mobile = data['mobile']
+                if not re.match(r'^[0-9]{11}$', mobile):
+                    return {'message': 'O número de telefone deve ter 11 dígitos numéricos'}, 400
+                fields_to_update.append('mobile = %s')
+                values.append(mobile)
+
+            if 'cpf' in data:
+                cpf = data['cpf']
+                if not re.match(r'^[0-9]{11}$', cpf):
+                    return {'message': 'CPF deve ter 11 dígitos numéricos'}, 400
+                fields_to_update.append('cpf = %s')
+                values.append(cpf)
+
+            if 'weight' in data:
+                try:
+                    weight = float(data['weight'])
+                    if weight <= 0 or weight > 500:
+                        return {'message': 'Peso deve ser um número positivo e menor que 500'}, 400
+                    fields_to_update.append('weight = %s')
+                    values.append(weight)
+                except (ValueError, TypeError):
+                    return {'message': 'Peso deve ser um número válido'}, 400
+
+            if 'height' in data:
+                try:
+                    height = float(data['height'])
+                    if height <= 0 or height > 3:
+                        return {'message': 'Altura deve ser um número positivo entre 0 e 3'}, 400
+                    fields_to_update.append('height = %s')
+                    values.append(height)
+                except (ValueError, TypeError):
+                    return {'message': 'Altura deve ser um número válido'}, 400
+
+            if 'note' in data:
+                fields_to_update.append('note = %s')
+                values.append(data['note'])
+
+            if not fields_to_update:
+                return {'message': 'Nenhum campo válido para atualização'}, 400
+
+            # Atualizar os dados do paciente
+            update_query = f"UPDATE tb_patients SET {', '.join(fields_to_update)}, updated_at = NOW() WHERE id = %s"
+            values.append(id)
+            execute_query(update_query, tuple(values))
+
+            return {'message': 'Dados do paciente atualizados com sucesso'}, 200
+        except Exception as e:
+            return {'message': f'Erro ao atualizar dados do paciente: {str(e)}'}, 500

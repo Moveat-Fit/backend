@@ -119,17 +119,62 @@ def create_tables(cnxn):
         """
     ]
 
+
+def insert_initial_data(cnxn):
+    if cnxn is None:
+        print("Não foi possível inserir os dados iniciais, pois a conexão falhou.")
+        return
+
+    insert_commands = [
+        """
+        INSERT INTO tb_food_groups (name) VALUES 
+        ('Cereais'),
+        ('Proteínas'),
+        ('Frutas'),
+        ('Vegetais'),
+        ('Laticínios')
+        """,
+        """
+        INSERT INTO tb_foods (food_group_id, name, default_portion) VALUES 
+        (1, 'Arroz', '100g'),
+        (1, 'Feijão', '80g'),
+        (2, 'Frango grelhado', '150g'),
+        (3, 'Maçã', '1 unidade'),
+        (3, 'Banana', '1 unidade'),
+        (4, 'Alface', '50g'),
+        (4, 'Cenoura', '80g'),
+        (5, 'Leite', '200ml'),
+        (5, 'Queijo', '30g')
+        """,
+        """
+        INSERT INTO tb_meal_types (name) VALUES 
+        ('Café da manhã'),
+        ('Almoço'),
+        ('Jantar'),
+        ('Lanche')
+        """
+    ]
+
     try:
         cursor = cnxn.cursor()
-        for sql in sql_commands:
+        for sql in insert_commands:
             cursor.execute(sql)
         cnxn.commit()
-        print("Tabelas criadas com sucesso.")
+        print("Dados iniciais inseridos com sucesso.")
     except mysql.connector.Error as e:
-        print("Erro ao criar tabelas:", e)
+        print("Erro ao inserir dados iniciais:", e)
     finally:
         cursor.close()
-        cnxn.close()
 
-connection = connect_database()
-create_tables(connection)
+# Função principal para executar todas as operações
+def setup_database():
+    connection = connect_database()
+    if connection:
+        create_tables(connection)
+        insert_initial_data(connection)
+        connection.close()
+    else:
+        print("Não foi possível configurar o banco de dados devido a falha na conexão.")
+
+# Executar a configuração do banco de dados
+setup_database()
