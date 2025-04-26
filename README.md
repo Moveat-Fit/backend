@@ -58,7 +58,7 @@ Para iniciar o servidor de desenvolvimento, execute:
 python run.py
 ```
 
-Este código acima realiza duas tarefas principais: inicializa o banco de dados e suas operações e executa a aplicação Flask.
+- Este código acima realiza duas tarefas principais: inicializa o banco de dados e suas operações e executa a aplicação Flask.
 
 ```
 from app import create_app
@@ -77,7 +77,7 @@ if __name__ == "__main__":
     initialize_database()
     app.run(debug=True)
 ```
-Em resumo, o código configura e inicia o ambiente necessário para a aplicação funcionar, garantindo que o banco de dados esteja pronto antes de iniciar o servidor.
+- Em resumo, o código configura e inicia o ambiente necessário para a aplicação funcionar, garantindo que o banco de dados esteja pronto antes de iniciar o servidor.
 
 
 O servidor estará disponível em `http://127.0.0.1:5000`.
