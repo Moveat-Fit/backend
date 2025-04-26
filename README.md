@@ -80,7 +80,7 @@ if __name__ == "__main__":
 Em resumo, o código configura e inicia o ambiente necessário para a aplicação funcionar, garantindo que o banco de dados esteja pronto antes de iniciar o servidor.
 
 
-O servidor estará disponível em `http://localhost:5000`.
+O servidor estará disponível em `http://127.0.0.1:5000`.
 
 ## Endpoints da API
 
@@ -269,4 +269,5 @@ Sucesso (200): Conteúdo público acessível.
 
 Sucesso (200): Conexão com o banco de dados bem-sucedida.
 Erro (500): Erro ao conectar ao banco de dados.
+
 
