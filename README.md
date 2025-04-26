@@ -88,7 +88,8 @@ O servidor estará disponível em `http://127.0.0.1:5000`.
 - `POST /professional`: Login de profissionais
 - `POST /patient`: Login de pacientes
 - `POST /register/patient`: Registro de pacientes (requer autenticação de profissional)
-- `POST /deletePatient/<patient_id>`: Deleta pacientes de um profissional específico
+- `PUT /patient/< id >/update`: Atualiza dados do paciente de um profissional
+- `DELETE /deletePatient/<patient_id>`: Deleta pacientes de um profissional específico
 - `GET /protected`: Rota protegida (requer autenticação)
 - `GET /public`: Rota pública
 - `GET /test-connection`: Testa a conexão com o banco de dados
@@ -201,7 +202,7 @@ Sucesso (200):
 }
 ```
 Erro (404): Paciente não encontrado ou não pertence ao profissional.
-### PUT /patient/<id>/update
+### PUT /patient/< id >/update
 Body da Requisição:
 
 
