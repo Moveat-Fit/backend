@@ -7,7 +7,7 @@ from .resources.user import ProfessionalRegistration, ProfessionalLogin, Patient
 from .resources.protected import ProtectedResource
 from .resources.public import PublicResource
 from .resources.test_connection import TestConnection
-def create_app():   
+def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
     CORS(app)
