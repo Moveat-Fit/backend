@@ -209,18 +209,27 @@ class PatientRegistration(Resource):
                 return {'message': 'Email, CPF ou número de telefone já registrado'}, 409
 
             insert_query = """
-                      INSERT INTO tb_patients (full_name, birth_date, gender, email, password, mobile, cpf, weight, height, note, professional_id, created_at, updated_at) 
-                      VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW())
-                  """
-            execute_query(insert_query, (
-            full_name, birth_date, gender, email, hashed_password, mobile, cpf, weight, height, note, current_user))
+                        INSERT INTO tb_patients (full_name, birth_date, gender, email, password, mobile, 
+                        cpf, weight, height, note, professional_id, created_at, updated_at) 
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW())
+                    """
+            execute_query(insert_query, (full_name, birth_date, gender, email, hashed_password,
+                                         mobile, cpf, weight, height, note, current_user))
 
-            # Obter o ID do último paciente inserido
-            id_query = "SELECT LAST_INSERT_ID() AS id"
-            patient_id_result = execute_query(id_query)
-            patient_id = patient_id_result[0]['id']
+            # Consultar o paciente recém-inserido usando campos únicos
+            get_patient_query = """
+                        SELECT id FROM tb_patients 
+                        WHERE email = %s AND cpf = %s AND mobile = %s
+                        ORDER BY created_at DESC LIMIT 1
+                    """
+            result = execute_query(get_patient_query, (email, cpf, mobile))
+            patient_id = result[0]['id'] if result else None
+
+            if patient_id is None:
+                return {'message': 'Erro ao obter ID do paciente'}, 500
 
             return {'message': 'Paciente registrado com sucesso', 'patient_id': patient_id}, 201
+
         except Exception as e:
             return {'message': f'Erro ao registrar paciente: {str(e)}'}, 500
 
