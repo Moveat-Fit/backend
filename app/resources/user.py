@@ -209,12 +209,18 @@ class PatientRegistration(Resource):
                 return {'message': 'Email, CPF ou número de telefone já registrado'}, 409
 
             insert_query = """
-                INSERT INTO tb_patients (full_name, birth_date, gender, email, password, mobile, cpf, weight, height, note, professional_id, created_at, updated_at) 
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW())
-            """
-            execute_query(insert_query, (full_name, birth_date, gender, email, hashed_password, mobile, cpf, weight, height, note, current_user))
+                      INSERT INTO tb_patients (full_name, birth_date, gender, email, password, mobile, cpf, weight, height, note, professional_id, created_at, updated_at) 
+                      VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW())
+                  """
+            execute_query(insert_query, (
+            full_name, birth_date, gender, email, hashed_password, mobile, cpf, weight, height, note, current_user))
 
-            return {'message': 'Paciente registrado com sucesso'}, 201
+            # Obter o ID do último paciente inserido
+            id_query = "SELECT LAST_INSERT_ID() AS id"
+            patient_id_result = execute_query(id_query)
+            patient_id = patient_id_result[0]['id']
+
+            return {'message': 'Paciente registrado com sucesso', 'patient_id': patient_id}, 201
         except Exception as e:
             return {'message': f'Erro ao registrar paciente: {str(e)}'}, 500
 
