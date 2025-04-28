@@ -302,7 +302,36 @@ class UpdatePatient(Resource):
             if not result:
                 return {'message': 'Paciente não encontrado ou não pertence ao profissional'}, 404
 
-            # Validar e atualizar os campos fornecidos
+            # Verificar duplicidade de campos únicos antes da atualização
+            if any(field in data for field in ['email', 'cpf', 'mobile']):
+                check_duplicates_query = """
+                            SELECT email, cpf, mobile FROM tb_patients 
+                            WHERE id != %s AND (
+                                email = %s OR 
+                                cpf = %s OR 
+                                mobile = %s
+                            )
+                        """
+                duplicate_check = execute_query(
+                    check_duplicates_query,
+                    (
+                        id,
+                        data.get('email', ''),
+                        data.get('cpf', ''),
+                        data.get('mobile', '')
+                    )
+                )
+
+                if duplicate_check:
+                    duplicate_record = duplicate_check[0]
+                    if 'email' in data and data['email'] == duplicate_record['email']:
+                        return {'message': 'Email já registrado'}, 409
+                    if 'cpf' in data and data['cpf'] == duplicate_record['cpf']:
+                        return {'message': 'CPF já registrado'}, 409
+                    if 'mobile' in data and data['mobile'] == duplicate_record['mobile']:
+                        return {'message': 'Número de telefone já registrado'}, 409
+
+            # Resto do código de validação permanece o mesmo
             fields_to_update = []
             values = []
 
@@ -382,5 +411,8 @@ class UpdatePatient(Resource):
             execute_query(update_query, tuple(values))
 
             return {'message': 'Dados do paciente atualizados com sucesso'}, 200
+
         except Exception as e:
-            return {'message': f'Erro ao atualizar dados do paciente: {str(e)}'}, 500
+            # Log do erro para debugging
+            logging.error(f"Erro na atualização do paciente: {str(e)}")
+            return {'message': 'Erro ao atualizar dados do paciente'}, 500
