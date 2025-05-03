@@ -263,7 +263,7 @@ class PatientList(Resource):
             patients = execute_query(query, {'professional_id': professional_id})
             logger.debug(f"Query result: {patients}")
 
-            if patients:
+            if patients or patients.__sizeof__() > 0:
                 return {'patients': patients}, 200
             else:
                 return {'message': 'Nenhum paciente encontrado para este profissional'}, 404

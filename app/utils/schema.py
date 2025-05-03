@@ -15,7 +15,7 @@ def connect_database():
         print("Conexão estabelecida")
         return cnxn
     except mysql.connector.Error as e:
-        print("Erro ao conectar ao MySQL:", e)
+        print(f"Erro ao conectar ao MySQL: {e}")
         return None
 
 def create_tables(cnxn):
@@ -25,7 +25,7 @@ def create_tables(cnxn):
 
     sql_commands = [
         """
-        CREATE TABLE IF NOT EXISTS TB_PROFESSIONALS (
+        CREATE TABLE IF NOT EXISTS tb_professionals (
             id INT AUTO_INCREMENT PRIMARY KEY,
             full_name VARCHAR(255) NOT NULL,
             email VARCHAR(255) UNIQUE NOT NULL,
@@ -45,7 +45,7 @@ def create_tables(cnxn):
         )
         """,
         """
-        CREATE TABLE IF NOT EXISTS TB_PATIENTS (
+        CREATE TABLE IF NOT EXISTS tb_patients (
             id INT AUTO_INCREMENT PRIMARY KEY,
             full_name VARCHAR(255) NOT NULL,
             birth_date DATE NOT NULL,
@@ -60,7 +60,7 @@ def create_tables(cnxn):
             professional_id INT NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            FOREIGN KEY (professional_id) REFERENCES TB_PROFESSIONALS(id),
+            FOREIGN KEY (professional_id) REFERENCES tb_professionals(id),
             CONSTRAINT chk_full_name_patient CHECK (CHAR_LENGTH(TRIM(full_name)) > 0),
             CONSTRAINT chk_email_patient CHECK (CHAR_LENGTH(TRIM(email)) > 0),
             CONSTRAINT chk_password_patient CHECK (CHAR_LENGTH(TRIM(password)) > 0),
@@ -119,6 +119,16 @@ def create_tables(cnxn):
         """
     ]
 
+    try:
+        cursor = cnxn.cursor()
+        for sql in sql_commands:
+            cursor.execute(sql)
+        cnxn.commit()
+        print("Tabelas criadas com sucesso.")
+    except mysql.connector.Error as e:
+        print(f"Erro ao criar as tabelas: {e}")
+    finally:
+        cursor.close()
 
 def insert_initial_data(cnxn):
     if cnxn is None:
@@ -162,11 +172,10 @@ def insert_initial_data(cnxn):
         cnxn.commit()
         print("Dados iniciais inseridos com sucesso.")
     except mysql.connector.Error as e:
-        print("Erro ao inserir dados iniciais:", e)
+        print(f"Erro ao inserir dados iniciais: {e}")
     finally:
         cursor.close()
 
-# Função principal para executar todas as operações
 def setup_database():
     connection = connect_database()
     if connection:
