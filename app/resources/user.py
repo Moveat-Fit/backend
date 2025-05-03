@@ -237,6 +237,42 @@ class PatientRegistration(Resource):
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
+class PatientDetails(Resource):
+    def get(self, id):
+        logger.debug(f"Received request for patient ID: {id}")
+        try:
+            query = """
+                SELECT
+                    id,
+                    full_name,
+                    DATE_FORMAT(birth_date, '%Y-%m-%d') AS birth_date,
+                    gender,
+                    email,
+                    mobile,
+                    cpf,
+                    CAST(weight AS CHAR) AS weight,
+                    CAST(height AS CHAR) AS height,
+                    note,
+                    professional_id,
+                    DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s') AS created_at,
+                    DATE_FORMAT(updated_at, '%Y-%m-%d %H:%i:%s') AS updated_at
+                FROM tb_patients
+                WHERE id = %(id)s
+            """
+            logger.debug(f"Executing query with patient id: {id}")
+            patientDetails = execute_query(query, {'id': id})
+            logger.debug(f"Query result: {patientDetails}")
+
+
+            if not patientDetails != None or not len(patientDetails) > 0: 
+                return {'message': f'O paciente com id {id} não foi encontrado.'}, 404
+            
+            return {'patient': patientDetails}, 200
+                
+        except Exception as e:
+            logger.error(f"Error occurred: {str(e)}", exc_info=True)
+            return {'message': f'Erro ao buscar paciente: {str(e)}'}, 500
+
 class PatientList(Resource):
     def get(self, professional_id):
         logger.debug(f"Received request for professional_id: {professional_id}")
