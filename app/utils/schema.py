@@ -36,9 +36,9 @@ def create_tables(cnxn):
             email VARCHAR(255) UNIQUE NOT NULL,
             password VARCHAR(255) NOT NULL,
             cpf CHAR(11) UNIQUE NOT NULL,
-            phone VARCHAR(20) NOT NULL,
+            phone VARCHAR(15) NOT NULL,
             regional_council_type VARCHAR(50) NOT NULL,
-            regional_council_number VARCHAR(50) NOT NULL,
+            regional_council VARCHAR(50) NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             CONSTRAINT uq_professional_council UNIQUE (regional_council_type, regional_council_number),
@@ -55,11 +55,11 @@ def create_tables(cnxn):
             gender ENUM('M', 'F', 'Other') NOT NULL,
             email VARCHAR(255) UNIQUE NOT NULL,
             password VARCHAR(255) NOT NULL,
-            phone VARCHAR(20) NOT NULL,
+            phone VARCHAR(15) NOT NULL,
             cpf CHAR(11) UNIQUE NOT NULL,
-            weight_kg DECIMAL(5,2),
-            height_cm DECIMAL(5,2),
-            observations TEXT,
+            weight DECIMAL(5,2),
+            height DECIMAL(3,2),
+            note TEXT,
             professional_id INT NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -570,7 +570,7 @@ def insert_initial_data(cnxn):
                 cursor.execute(command_block)
                 print(f"Bloco de comando {command_block_index + 1} executado.")
             except mysql.connector.Error as e:
-                if e.errno == 1062: # ER_DUP_ENTRY
+                if e.errno == 1062:  # ER_DUP_ENTRY
                     print(
                         f"Dado inicial já existe (ignorado) no bloco {command_block_index + 1}: {command_block.strip()[:70]}...")
                 else:
