@@ -10,7 +10,6 @@
   * `public.py`: Implementa recursos públicos
   * `test_connection.py`: Testa a conexão com o banco de dados
   * `user.py`: Gerencia operações relacionadas a usuários (registro, login, etc.)
-  * `meal_plans.py`: Gerencia operações relacionadas a planos alimentares
 
 * `utils/`: Utilitários da aplicação
 
