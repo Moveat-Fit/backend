@@ -1,27 +1,25 @@
-import mysql.connector
+import pymysql
 from dotenv import load_dotenv
 import os
 
 load_dotenv()
 
-
 def connect_database():
-
     try:
-        cnxn = mysql.connector.connect(
+        cnxn = pymysql.connect(
             host=os.getenv("MYSQL_HOST"),
             user=os.getenv("MYSQL_USER"),
             password=os.getenv("MYSQL_PASSWORD"),
             database=os.getenv("MYSQL_DB"),
             charset='utf8mb4',
-            collation='utf8mb4_unicode_ci'
+            autocommit=True,
+            cursorclass=pymysql.cursors.DictCursor
         )
         print("Conexão estabelecida.")
         return cnxn
-    except mysql.connector.Error as e:
+    except pymysql.MySQLError as e:
         print(f"Erro ao conectar ao MySQL: {e}")
         return None
-
 
 def create_tables(cnxn):
     if cnxn is None:
@@ -41,7 +39,7 @@ def create_tables(cnxn):
             regional_council VARCHAR(50) NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            CONSTRAINT uq_professional_council UNIQUE (regional_council_type, regional_council_number),
+            CONSTRAINT uq_professional_council UNIQUE (regional_council_type, regional_council),
             CONSTRAINT chk_prof_full_name CHECK (CHAR_LENGTH(TRIM(full_name)) > 0),
             CONSTRAINT chk_prof_email CHECK (email LIKE '%_@__%.__%'),
             CONSTRAINT chk_prof_phone CHECK (CHAR_LENGTH(TRIM(phone)) >= 10)
@@ -159,12 +157,12 @@ def create_tables(cnxn):
         for command in sql_commands:
             try:
                 cursor.execute(command)
-            except mysql.connector.Error as e:
+            except pymysql.MySQLError as e:
                 print(
                     f"Erro ao executar comando: {command.strip()[:100]}... \nERRO: {e}")
         cnxn.commit()
         print("Tabelas criadas com sucesso.")
-    except mysql.connector.Error as e:
+    except pymysql.MySQLError as e:
         print(f"Erro geral ao criar as tabelas: {e}")
     finally:
         if 'cursor' in locals() and cursor is not None:
@@ -569,7 +567,7 @@ def insert_initial_data(cnxn):
             try:
                 cursor.execute(command_block)
                 print(f"Bloco de comando {command_block_index + 1} executado.")
-            except mysql.connector.Error as e:
+            except pymysql.MySQLError as e:
                 if e.errno == 1062:  # ER_DUP_ENTRY
                     print(
                         f"Dado inicial já existe (ignorado) no bloco {command_block_index + 1}: {command_block.strip()[:70]}...")
@@ -579,7 +577,7 @@ def insert_initial_data(cnxn):
         cnxn.commit()
         print("Dados iniciais (incluindo alimentos e seus nutrientes) verificados/inseridos com sucesso.")
 
-    except mysql.connector.Error as e:
+    except pymysql.MySQLError as e:
         print(f"Erro geral ao inserir dados iniciais: {e}")
     finally:
         if 'cursor' in locals() and cursor is not None:
