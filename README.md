@@ -56,12 +56,10 @@ pip install -r requirements.txt
 4. Configure as variáveis de ambiente criando um arquivo `.env` com as seguintes chaves:
 
 ```
-DB_HOST=localhost
-DB_PORT=3306
-DB_USER=usuario
-DB_PASSWORD=senha
-DB_NAME=nome_do_banco
-SECRET_KEY=chave_secreta
+MYSQL_HOST=
+MYSQL_USER=
+MYSQL_PASSWORD=
+MYSQL_DB=
 ```
 
 ---
