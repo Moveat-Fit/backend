@@ -315,5 +315,3 @@ A aplicação será iniciada em `http://localhost:5000/`
 | 409    | Conflict     | Conflito de dados, como e-mail ou CPF duplicado |
 
 ---
-
-Caso queira expandir com outros endpoints, posso continuar. Basta me avisar! ✅
