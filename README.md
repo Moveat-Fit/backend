@@ -1,123 +1,116 @@
-# Moveat-Fit Backend
+# Documentação Moveat-Fit Backend
 
-## Estrutura do Projeto
+## 📌 Sumário
 
-**Diretório ******\`\`******:** Diretório principal da aplicação
+* [Visão Geral](#visão-geral)
+* [Tecnologias Utilizadas](#tecnologias-utilizadas)
+* [Instalação](#instalação)
+* [Executando a Aplicação](#executando-a-aplicação)
+* [Endpoints da API](#endpoints-da-api)
+* [Exemplos de Requisições e Respostas](#exemplos-de-requisições-e-respostas)
 
-* `resources/`: Contém os recursos da API
+---
 
-  * `protected.py`: Implementa recursos protegidos por autenticação
-  * `public.py`: Implementa recursos públicos
-  * `test_connection.py`: Testa a conexão com o banco de dados
-  * `user.py`: Gerencia operações relacionadas a usuários (registro, login, etc.)
+## 📖 Visão Geral
 
-* `utils/`: Utilitários da aplicação
+Esta API serve como backend para um sistema nutricional, permitindo o cadastro e gerenciamento de profissionais de nutrição, pacientes, alimentos e planos alimentares.
 
-  * `connection.py`: Gerencia a conexão com o banco de dados
-  * `db.py`: Funções auxiliares para operações no banco de dados
-  * `schema.py`: Define o schema do banco de dados
+---
 
-* `__init__.py`: Inicializa a aplicação Flask
+## 🧰 Tecnologias Utilizadas
 
-* `config.py`: Configurações da aplicação
+* Python 3.11+
+* Flask
+* Flask-RESTful
+* MySQL
+* SQLAlchemy
+* Pydantic
+* python-dotenv
+* JWT (Json Web Token)
 
-* `run.py`: Ponto de entrada para executar a aplicação
+---
 
-## Funcionalidades
+## 💾 Instalação
 
-* Registro e login de profissionais de saúde
-* Registro e login de pacientes
-* Listagem, deleção e alteração de pacientes por profissional
-* Rotas protegidas e públicas
-* Teste de conexão com o banco de dados
-* Gerenciamento de Planos Alimentares:
+1. Clone o repositório:
 
-  * Criação, consulta, atualização, exclusão
-  * Listagem por paciente
-
-## Configuração
-
-1. Crie um arquivo `.env` na raiz do projeto com as variáveis:
-
-```env
-MYSQL_HOST=seu_host
-MYSQL_USER=seu_usuario
-MYSQL_PASSWORD=sua_senha
-MYSQL_DB=seu_banco_de_dados
-JWT_SECRET_KEY=sua_chave_secreta
+```bash
+git clone https://github.com/seu-usuario/sistema-nutricional-api.git
+cd sistema-nutricional-api
 ```
 
-2. Instale as dependências:
+2. Crie e ative um ambiente virtual:
+
+```bash
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+venv\Scripts\activate   # Windows
+```
+
+3. Instale as dependências:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-## Executando o Projeto
+4. Configure as variáveis de ambiente criando um arquivo `.env` com as seguintes chaves:
 
-Para iniciar o servidor de desenvolvimento, execute:
+```
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=usuario
+DB_PASSWORD=senha
+DB_NAME=nome_do_banco
+SECRET_KEY=chave_secreta
+```
+
+---
+
+## 🚀 Executando a Aplicação
 
 ```bash
-python run.py
+python app.py
 ```
 
-Esse código inicializa o banco de dados e a aplicação Flask:
-
-```python
-from app import create_app
-from app.utils.schema import connect_database, create_tables
-
-app = create_app()
-
-def initialize_database():
-    connection = connect_database()
-    if connection:
-        create_tables(connection)
-
-if __name__ == "__main__":
-    initialize_database()
-    app.run(debug=True)
-```
-
-Servidor disponível em: `http://127.0.0.1:5000`
+A aplicação será iniciada em `http://localhost:5000/`
 
 ---
 
-## Endpoints da API
+## 📡 Endpoints da API
 
-### Autenticação e Usuários
+### 👤 Profissionais
 
-* **POST** `/register`: Registro de profissionais
-* **POST** `/professional`: Login de profissionais
-* **POST** `/patient`: Login de pacientes
-* **POST** `/register/patient`: Registro de pacientes (requer autenticação)
+* `POST /register`: Criação de um novo profissional
+* `POST /professional`: Login de profissional
 
-### Gerenciamento de Pacientes
+### 🧑 Pacientes
 
-* **PUT** `/patient/<patient_id>/update`: Atualiza dados do paciente
-* **DELETE** `/deletePatient/<patient_id>`: Deleta paciente
-* **GET** `/patients/<professional_id>`: Lista pacientes de um profissional
-* **GET** `/patient/<patient_id>`: Detalhes de um paciente
+* `POST /register/patient`: Cadastro de paciente
+* `GET /patients`: Lista todos os pacientes (auth JWT)
+* `GET /patients/<id>`: Detalhes de um paciente (auth JWT)
 
-### Planos Alimentares
+### 🍽️ Planos Alimentares
 
-* **POST** `/meal-plans`: Cria plano alimentar
-* **GET** `/meal-plans/<meal_plan_id>`: Detalhes de um plano
-* **PUT** `/meal-plans/<meal_plan_id>`: Atualiza plano alimentar
-* **DELETE** `/meal-plans/<meal_plan_id>`: Remove plano alimentar
-* **GET** `/patients/<patient_id>/meal-plans`: Lista planos do paciente
-
-### Utilitários
-
-* **GET** `/protected`: Rota protegida (requer autenticação)
-* **GET** `/public`: Rota pública
-* **GET** `/test-connection`: Testa conexão com banco de dados
+* `POST /meal-plans`: Criação de plano alimentar
+* `GET /meal-plans/<patient_id>`: Listagem por paciente
 
 ---
 
-## Exemplos de Requisições e Respostas
+## 📬 Exemplos de Requisições e Respostas
 
-### POST /register
+### 🔐 POST `/register`
+
+**Campos obrigatórios:**
+
+* `full_name` (string)
+* `email` (string)
+* `password` (string)
+* `cpf` (string)
+* `phone` (string)
+* `regional_council_type` (string)
+* `regional_council` (string)
+
+**Requisição:**
 
 ```json
 {
@@ -131,7 +124,9 @@ Servidor disponível em: `http://127.0.0.1:5000`
 }
 ```
 
-**Resposta 201:**
+**Respostas:**
+
+* `201 Created`:
 
 ```json
 {
@@ -140,7 +135,32 @@ Servidor disponível em: `http://127.0.0.1:5000`
 }
 ```
 
-### POST /professional
+* `400 Bad Request`:
+
+```json
+{
+  "error": "Campos obrigatórios ausentes ou inválidos"
+}
+```
+
+* `409 Conflict`:
+
+```json
+{
+  "error": "Usuário já existente"
+}
+```
+
+---
+
+### 🔐 POST `/professional`
+
+**Campos obrigatórios:**
+
+* `login` (string)
+* `password` (string)
+
+**Requisição:**
 
 ```json
 {
@@ -149,7 +169,9 @@ Servidor disponível em: `http://127.0.0.1:5000`
 }
 ```
 
-**Resposta 200:**
+**Respostas:**
+
+* `200 OK`:
 
 ```json
 {
@@ -157,41 +179,42 @@ Servidor disponível em: `http://127.0.0.1:5000`
 }
 ```
 
-### POST /patient
+* `401 Unauthorized`:
 
 ```json
 {
-  "login": "email@example.com",
-  "password": "Senha123!"
+  "error": "Credenciais inválidas"
 }
 ```
 
-**Resposta 200:**
+---
+
+### 👶 POST `/register/patient`
+
+**Campos obrigatórios:**
+
+* `full_name`, `birth_date`, `gender`, `email`, `password`, `mobile`, `cpf`, `weight`, `height`
+
+**Requisição:**
 
 ```json
 {
-  "access_token": "<jwt_token>"
-}
-```
-
-### POST /register/patient
-
-```json
-{
-  "full_name": "Nome Completo",
+  "full_name": "Nome Paciente",
   "birth_date": "1990-01-01",
   "gender": "M",
-  "email": "email@example.com",
+  "email": "paciente@example.com",
   "password": "Senha123!",
-  "mobile": "11987654321",
-  "cpf": "12345678901",
+  "mobile": "11999999999",
+  "cpf": "98765432100",
   "weight": 70.5,
   "height": 1.75,
-  "note": "Nota sobre o paciente"
+  "note": "Paciente com meta de emagrecimento"
 }
 ```
 
-**Resposta 201:**
+**Respostas:**
+
+* `201 Created`:
 
 ```json
 {
@@ -199,91 +222,33 @@ Servidor disponível em: `http://127.0.0.1:5000`
 }
 ```
 
-### DELETE /deletePatient/\<patient\_id>
-
-**Resposta 200:**
+* `400 Bad Request`:
 
 ```json
 {
-  "message": "Paciente deletado com sucesso"
+  "error": "Campos obrigatórios ausentes ou inválidos"
 }
 ```
 
-### PUT /patient/\<patient\_id>/update
+* `401 Unauthorized`:
 
 ```json
 {
-  "full_name": "Novo Nome",
-  "birth_date": "1990-01-01",
-  "gender": "M",
-  "email": "novoemail@example.com",
-  "mobile": "11987654321",
-  "cpf": "12345678901",
-  "weight": 70.5,
-  "height": 1.75,
-  "note": "Nota atualizada"
+  "error": "Token JWT ausente ou inválido"
 }
 ```
 
-**Resposta 200:**
+---
 
-```json
-{
-  "message": "Dados do paciente atualizados com sucesso"
-}
-```
+### 📋 POST `/meal-plans`
 
-### GET /patients/\<professional\_id>
+**Campos obrigatórios:**
 
-**Resposta 200:**
+* `patient_id`, `plan_name`, `start_date`, `end_date`, `goals`, `entries[]`
+* Dentro de `entries[]`: `meal_type_id`, `day_of_plan`, `time_scheduled`, `foods[]`
+* Dentro de `foods[]`: `food_id`, `prescribed_quantity_grams`, `display_portion`
 
-```json
-{
-  "patients": [
-    {
-      "id": 1,
-      "full_name": "Nome Completo",
-      "birth_date": "1990-01-01",
-      "gender": "M",
-      "email": "email@example.com",
-      "mobile": "11987654321",
-      "cpf": "12345678901",
-      "weight": "70.5",
-      "height": "1.75",
-      "note": "Nota sobre o paciente",
-      "professional_id": 1,
-      "created_at": "2023-01-01 12:00:00",
-      "updated_at": "2023-01-01 12:00:00"
-    }
-  ]
-}
-```
-
-### GET /patient/\<patient\_id>
-
-**Resposta 200:**
-
-```json
-{
-  "patient": {
-    "id": 1,
-    "full_name": "Nome Completo",
-    "birth_date": "1990-01-01",
-    "gender": "M",
-    "email": "email@example.com",
-    "phone": "11987654321",
-    "cpf": "12345678901",
-    "weight": "70.5",
-    "height": "1.75",
-    "note": "Nota sobre o paciente",
-    "professional_id": 1,
-    "created_at": "2023-01-01 12:00:00",
-    "updated_at": "2023-01-01 12:00:00"
-  }
-}
-```
-
-### POST /meal-plans
+**Requisição:**
 
 ```json
 {
@@ -311,7 +276,9 @@ Servidor disponível em: `http://127.0.0.1:5000`
 }
 ```
 
-**Resposta 201:**
+**Respostas:**
+
+* `201 Created`:
 
 ```json
 {
@@ -320,103 +287,35 @@ Servidor disponível em: `http://127.0.0.1:5000`
 }
 ```
 
-### GET /meal-plans/\<meal\_plan\_id>
-
-**Resposta 200:**
+* `400 Bad Request`:
 
 ```json
 {
-  "meal_plan": {
-    "id": 1,
-    "patient_id": 1,
-    "professional_id": 1,
-    "plan_name": "Plano Nutricional",
-    "start_date": "2023-01-01",
-    "end_date": "2023-02-01",
-    "goals": "Perda de peso",
-    "created_at": "2023-01-01 12:00:00",
-    "updated_at": "2023-01-01 12:00:00",
-    "entries": [
-      {
-        "id": 1,
-        "meal_type_id": 1,
-        "meal_type_name": "Café da Manhã",
-        "day_of_plan": "2023-01-01",
-        "time_scheduled": "08:00",
-        "notes": "Café da manhã",
-        "foods": [
-          {
-            "id": 1,
-            "food_id": 1,
-            "food_name": "Ovos",
-            "prescribed_quantity_grams": 100,
-            "display_portion": "1 xícara",
-            "preparation_notes": "Sem açúcar"
-          }
-        ]
-      }
-    ]
-  }
+  "error": "Dados inválidos para criação do plano"
 }
 ```
 
-### PUT /meal-plans/\<meal\_plan\_id>
+* `401 Unauthorized`:
 
 ```json
 {
-  "plan_name": "Plano Atualizado",
-  "start_date": "2023-01-02",
-  "end_date": "2023-02-02",
-  "goals": "Novas metas"
+  "error": "Token JWT ausente ou inválido"
 }
 ```
 
-**Resposta 200:**
+---
 
-```json
-{
-  "message": "Plano alimentar atualizado com sucesso"
-}
-```
+## ⚠️ Códigos de Status Comuns
 
-### DELETE /meal-plans/\<meal\_plan\_id>
+| Código | Significado  | Quando ocorre                                   |
+| ------ | ------------ | ----------------------------------------------- |
+| 200    | OK           | Requisição bem-sucedida                         |
+| 201    | Created      | Recurso criado com sucesso                      |
+| 400    | Bad Request  | Dados ausentes, inválidos ou malformados        |
+| 401    | Unauthorized | Token JWT ausente, inválido ou expirado         |
+| 404    | Not Found    | Recurso não encontrado                          |
+| 409    | Conflict     | Conflito de dados, como e-mail ou CPF duplicado |
 
-**Resposta 200:**
+---
 
-```json
-{
-  "message": "Plano alimentar deletado com sucesso"
-}
-```
-
-### GET /patients/\<patient\_id>/meal-plans
-
-**Resposta 200:**
-
-```json
-{
-  "meal_plans": [
-    {
-      "id": 1,
-      "plan_name": "Plano Nutricional",
-      "start_date": "2023-01-01",
-      "end_date": "2023-02-01",
-      "goals": "Perda de peso",
-      "created_at": "2023-01-01 12:00:00",
-      "updated_at": "2023-01-01 12:00:00"
-    }
-  ]
-}
-```
-
-### GET /protected
-
-**Resposta 200:** Conteúdo protegido acessível.
-
-### GET /public
-
-**Resposta 200:** Conteúdo público acessível.
-
-### GET /test-connection
-
-**Resposta 200:** Conexão com o banco de dados bem-sucedida.
+Caso queira expandir com outros endpoints, posso continuar. Basta me avisar! ✅

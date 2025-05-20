@@ -246,7 +246,7 @@ class PatientDetails(Resource):
                 SELECT
                     id,
                     full_name,
-                    DATE_FORMAT(birth_date, '%Y-%m-%d') AS birth_date,
+                    DATE_FORMAT(birth_date, '%%Y-%%m-%%d') AS birth_date,
                     gender,
                     email,
                     phone,
@@ -255,8 +255,8 @@ class PatientDetails(Resource):
                     CAST(height AS CHAR) AS height,
                     note,
                     professional_id,
-                    DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s') AS created_at,
-                    DATE_FORMAT(updated_at, '%Y-%m-%d %H:%i:%s') AS updated_at
+                    DATE_FORMAT(created_at, '%%Y-%%m-%%d %%H:%%i:%%s') AS created_at,
+                    DATE_FORMAT(updated_at, '%%Y-%%m-%%d %%H:%%i:%%s') AS updated_at
                 FROM tb_patients
                 WHERE id = %(id)s
             """
@@ -282,7 +282,7 @@ class PatientList(Resource):
                 SELECT
                     id,
                     full_name,
-                    DATE_FORMAT(birth_date, '%Y-%m-%d') AS birth_date,
+                    DATE_FORMAT(birth_date, '%%Y-%%m-%%d') AS birth_date,
                     gender,
                     email,
                     phone,
@@ -291,8 +291,8 @@ class PatientList(Resource):
                     CAST(height AS CHAR) AS height,
                     note,
                     professional_id,
-                    DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s') AS created_at,
-                    DATE_FORMAT(updated_at, '%Y-%m-%d %H:%i:%s') AS updated_at
+                    DATE_FORMAT(created_at, '%%Y-%%m-%%d %%H:%%i:%%s') AS created_at,
+                    DATE_FORMAT(updated_at, '%%Y-%%m-%%d %%H:%%i:%%s') AS updated_at
                 FROM tb_patients
                 WHERE professional_id = %(professional_id)s
             """
