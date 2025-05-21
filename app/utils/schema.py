@@ -101,12 +101,6 @@ def create_tables(cnxn):
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         """,
         """
-        CREATE TABLE IF NOT EXISTS tb_meal_types (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            name VARCHAR(100) NOT NULL UNIQUE
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-        """,
-        """
         CREATE TABLE IF NOT EXISTS tb_patient_meal_plans (
             id INT AUTO_INCREMENT PRIMARY KEY,
             patient_id INT NOT NULL,
@@ -125,15 +119,14 @@ def create_tables(cnxn):
         CREATE TABLE IF NOT EXISTS tb_meal_plan_entries (
             id INT AUTO_INCREMENT PRIMARY KEY,
             meal_plan_id INT NOT NULL,
-            meal_type_id INT NOT NULL,
+            meal_type_name VARCHAR(100) NOT NULL,
             day_of_plan DATE NOT NULL,
             time_scheduled TIME NULL,
             notes TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             FOREIGN KEY (meal_plan_id) REFERENCES tb_patient_meal_plans(id) ON DELETE CASCADE,
-            FOREIGN KEY (meal_type_id) REFERENCES tb_meal_types(id) ON DELETE RESTRICT,
-            UNIQUE KEY uq_meal_entry (meal_plan_id, meal_type_id, day_of_plan)
+            UNIQUE KEY uq_meal_entry (meal_plan_id, meal_type_name, day_of_plan)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         """,
         """
@@ -186,14 +179,6 @@ def insert_initial_data(cnxn):
         ('Laticínios'),
         ('Gorduras'),
         ('Açúcares')
-        """,
-        # --- TIPOS DE REFEIÇÃO ---
-        """
-        INSERT IGNORE INTO tb_meal_types (name) VALUES
-        ('Café da Manhã'),
-        ('Almoço'),
-        ('Lanche da Tarde'),
-        ('Jantar')
         """,
         # --- NUTRIENTES ---
         """
