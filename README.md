@@ -301,6 +301,76 @@ A aplicação será iniciada em `http://localhost:5000/`
 }
 ```
 
+
+### 🍎 `GET /api/foods`
+
+
+
+**Requisição:**
+```json
+ http://127.0.0.1:5000/api/foods
+```
+**Respostas:**
+* *`200 OK (Sucesso):`*
+
+```json
+{
+  "foods": [
+    {
+      "id": 1,
+      "name": "Arroz branco cozido",
+      "food_group": "Cereais",
+      "default_portion": {
+        "description": "50g",
+        "grams": 50.0
+      },
+      "nutrients_summary": "Valor Energético (354.0 kcal), Proteína Total (7.8 g)...",
+      "nutrients_detail": [
+        {
+          "nutrient_id": 1,
+          "nutrient_name": "Valor Energético",
+          "unit": "kcal",
+          "amount_per_100_unit": 354.0
+        }
+      ]
+    }
+  ],
+  "pagination": {
+    "current_page": 2,
+    "per_page": 20,
+    "total_items": 45,
+    "total_pages": 3
+  }
+}
+```
+* *`400 Bad Request (Parâmetros inválidos):`*
+
+```json
+{
+  "error": "Parâmetros inválidos",
+  "details": {
+    "group_id": "Deve ser um número inteiro"
+  }
+```
+
+* *`401 Unauthorized (Token inválido):`*
+
+```json
+{
+  "error": "Token JWT ausente ou inválido"
+}
+```
+* *`500 Internal Server Error (Erro no servidor):`*
+
+```json
+{
+  "error": "Erro ao processar a requisição"
+}
+```
+
+
+
+
 ---
 
 ## ⚠️ Códigos de Status Comuns

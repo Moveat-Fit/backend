@@ -7,6 +7,8 @@
     <list default="true" id="4c752252-f94c-42fd-b948-9939f7ddd184" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/resources/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/resources/__init__.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/resources/user.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/resources/user.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -119,7 +121,8 @@
       <option name="presentableId" value="Default" />
       <updated>1741537481156</updated>
       <workItem from="1747353578706" duration="10126000" />
-      <workItem from="1747701501320" duration="3005000" />
+      <workItem from="1747701501320" duration="4247000" />
+      <workItem from="1747874237640" duration="1480000" />
     </task>
     <servers />
   </component>
@@ -141,7 +144,7 @@
     </option>
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/user_py$run.coverage" NAME="run Coverage Results" MODIFIED="1747702666267" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/user_py$run.coverage" NAME="run Coverage Results" MODIFIED="1747874793356" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/user_py$teste.coverage" NAME="teste Coverage Results" MODIFIED="1747357684684" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/user_py$public.coverage" NAME="public Coverage Results" MODIFIED="1747359669472" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/app/resources" />
     <SUITE FILE_PATH="coverage/user_py$schema.coverage" NAME="schema Coverage Results" MODIFIED="1747358553267" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/app/utils" />

@@ -792,3 +792,65 @@ class ListPatientMealPlans(Resource):
         except Exception as e:
             logger.error(f"Erro ao listar planos alimentares: {str(e)}", exc_info=True)
             return {'message': f'Erro ao listar planos alimentares: {str(e)}'}, 500
+
+
+class FoodList(Resource):
+    @jwt_required()
+    def get(self):
+        try:
+            # Verificar se o usuário está autenticado (profissional ou paciente)
+            current_user = get_jwt_identity()
+            claims = get_jwt()
+
+            # Consulta para obter todos os alimentos com seus grupos e nutrientes
+            query = """
+                    SELECT f.id, 
+                           f.name, 
+                           f.default_portion_description, 
+                           f.default_portion_grams, 
+                           fg.name as food_group, 
+                           GROUP_CONCAT( 
+                                   CONCAT( 
+                                           n.name, ' (', \
+                                           ROUND(fn.amount_per_100_unit, 1), ' ', 
+                                           n.unit, ')' 
+                                   ) SEPARATOR ', ' 
+                           )       as nutrients_summary, 
+                           JSON_ARRAYAGG( 
+                                   JSON_OBJECT( 
+                                           'nutrient_id', n.id, 
+                                           'nutrient_name', n.name, 
+                                           'unit', n.unit, 
+                                           'amount_per_100_unit', ROUND(fn.amount_per_100_unit, 1) 
+                                   ) 
+                           )       as nutrients_detail
+                    FROM tb_foods f
+                             LEFT JOIN tb_food_groups fg ON f.food_group_id = fg.id
+                             LEFT JOIN tb_food_nutrients fn ON f.id = fn.food_id
+                             LEFT JOIN tb_nutrients n ON fn.nutrient_id = n.id
+                    GROUP BY f.id
+                    ORDER BY f.name 
+                    """
+
+            foods = execute_query(query)
+
+            formatted_foods = []
+            for food in foods:
+                formatted_food = {
+                    'id': food['id'],
+                    'name': food['name'],
+                    'food_group': food['food_group'],
+                    'default_portion': {
+                        'description': food['default_portion_description'],
+                        'grams': float(food['default_portion_grams']) if food['default_portion_grams'] else None
+                    },
+                    'nutrients_summary': food['nutrients_summary'],
+                    'nutrients_detail': food['nutrients_detail'] if food['nutrients_detail'] else []
+                }
+                formatted_foods.append(formatted_food)
+
+            return {'foods': formatted_foods}, 200
+
+        except Exception as e:
+            logger.error(f"Erro ao listar alimentos: {str(e)}", exc_info=True)
+            return {'message': f'Erro ao listar alimentos: {str(e)}'}, 500
