@@ -499,7 +499,7 @@ class CreateMealPlan(Resource):
             'plan_name': 'Nome do plano',
             'start_date': 'Data de início',
             'end_date': 'Data de término',
-            'goals': 'Objetivos',
+            'goals': 'Objetivo',
             'entries': 'Entradas',
             'meal_type_name': 'Tipo da refeição',
             'day_of_plan': 'Dia do plano',
@@ -522,7 +522,7 @@ class CreateMealPlan(Resource):
         try:
             patient_id = int(data['patient_id'])
         except Exception:
-            return {'message': 'Paciente deve ser um número inteiro'}, 400
+            return {'message': 'patient_id deve ser um número inteiro'}, 400
 
         try:
             datetime.strptime(data['start_date'], '%Y-%m-%d')
@@ -531,13 +531,13 @@ class CreateMealPlan(Resource):
             return {'message': 'Data de início e data de término devem estar no formato YYYY-MM-DD'}, 400
 
         if not isinstance(data['entries'], list) or not data['entries']:
-            return {'message': 'Entradas deve ser uma lista não vazia'}, 400
+            return {'message': 'entries deve ser uma lista não vazia'}, 400
 
         # validação manual dos campos obrigatórios dentro de cada 'entries'
         for idx, entry in enumerate(data['entries']):
             for field in ['meal_type_name', 'day_of_plan', 'time_scheduled', 'foods']:
                 if not entry.get(field) or (isinstance(entry.get(field), str) and not entry.get(field).strip()):
-                    return {'message': f'O campo "{field_names[field]}" é obrigatório na entrada {idx+1} e não pode ser vazio'}, 400
+                    return {'message': f'O campo  \'{field_names[field]}\' é obrigatório e não pode ser vazio'}, 400
 
             try:
                 datetime.strptime(entry['day_of_plan'], '%Y-%m-%d')
@@ -554,7 +554,7 @@ class CreateMealPlan(Resource):
             for fidx, food in enumerate(entry['foods']):
                 for field in ['food_id', 'prescribed_quantity_grams', 'display_portion']:
                     if not food.get(field) and food.get(field) != 0:
-                        return {'message': f'O campo "{field_names[field]}" é obrigatório no alimento {fidx+1} da entrada {idx+1} e não pode ser vazio'}, 400
+                        return {'message': f'O campo  \'{field_names[field]} \' é obrigatório no alimento {fidx+1} da entrada {idx+1} e não pode ser vazio'}, 400
 
                 try:
                     food_id = int(food['food_id'])

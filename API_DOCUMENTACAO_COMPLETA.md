@@ -1,103 +1,14 @@
-# Documentação Moveat Backend
+# Documentação Completa da API - Sistema de Nutrição
 
-- [Documentação Moveat Backend](#documentação-moveat-backend)
-  - [Visão Geral](#visão-geral)
-  - [Tecnologias Utilizadas](#tecnologias-utilizadas)
-  - [Instalação](#instalação)
-  - [Executando a Aplicação](#executando-a-aplicação)
-- [📡 Endpoints da API](#-endpoints-da-api)
-  - [Autenticação](#autenticação)
-    - [Cadastro de Profissional](#cadastro-de-profissional)
-    - [Login de Profissional](#login-de-profissional)
-    - [Cadastro de Paciente](#cadastro-de-paciente)
-    - [Login de Paciente](#login-de-paciente)
-  - [Pacientes](#pacientes)
-    - [Detalhes do Paciente](#detalhes-do-paciente)
-    - [Listar Pacientes de um Profissional](#listar-pacientes-de-um-profissional)
-    - [Atualizar Paciente](#atualizar-paciente)
-    - [Deletar Paciente](#deletar-paciente)
-  - [Planos Alimentares](#planos-alimentares)
-    - [Criar Plano Alimentar](#criar-plano-alimentar)
-    - [Obter Plano Alimentar](#obter-plano-alimentar)
-    - [Atualizar Plano Alimentar](#atualizar-plano-alimentar)
-    - [Deletar Plano Alimentar](#deletar-plano-alimentar)
-  - [Alimentos](#alimentos)
-    - [Listar Alimentos](#listar-alimentos)
-  - [Observações Gerais](#observações-gerais)
-
-<br>
-
-
-##  Visão Geral
-
-Esta API serve como backend para um sistema nutricional, permitindo o cadastro e gerenciamento de profissionais de nutrição, pacientes, alimentos e planos alimentares.
-
-
-
-## Tecnologias Utilizadas
-
-* Python 3.11+
-* Flask
-* Flask-RESTful
-* MySQL
-* SQLAlchemy
-* Pydantic
-* python-dotenv
-* JWT (Json Web Token)
-
-
-## Instalação
-
-1. Clone o repositório:
-
-```bash
-git clone https://github.com/seu-usuario/sistema-nutricional-api.git
-cd sistema-nutricional-api
-```
-
-2. Crie e ative um ambiente virtual:
-
-```bash
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-venv\Scripts\activate   # Windows
-```
-
-3. Instale as dependências:
-
-```bash
-pip install -r requirements.txt
-```
-
-4. Configure as variáveis de ambiente criando um arquivo `.env` com as seguintes chaves:
-
-```
-MYSQL_HOST=
-MYSQL_USER=
-MYSQL_PASSWORD=
-MYSQL_DB=
-```
-
-
-## Executando a Aplicação
-
-```bash
-python app.py
-```
-
-A aplicação será iniciada em `http://localhost:5000/`
-
-<br>
-
-# 📡 Endpoints da API
+---
 
 ## Autenticação
 
 ### Cadastro de Profissional
 **POST** `/api/professional/register`
 
-- **Descrição:** Cadastra um novo profissional.
-- **Campos obrigatórios:**
+- Descrição: Cadastra um novo profissional.
+- Campos obrigatórios:
   - full_name (string, mínimo 3 caracteres)
   - email (string, formato válido)
   - password (string, mínimo 8 caracteres, 1 maiúscula, 1 minúscula, 1 número, 1 especial)
@@ -105,7 +16,7 @@ A aplicação será iniciada em `http://localhost:5000/`
   - phone (string, 11 dígitos numéricos)
   - regional_council_type (string)
   - regional_council (string)
--   **Request**
+- Exemplo de payload:
 ```json
 {
   "full_name": "Maria Silva",
@@ -117,7 +28,7 @@ A aplicação será iniciada em `http://localhost:5000/`
   "regional_council": "12345"
 }
 ```
-- **Responses**
+- Respostas:
   - Sucesso:
     - 201:
       ```json
@@ -139,18 +50,18 @@ A aplicação será iniciada em `http://localhost:5000/`
 ### Login de Profissional
 **POST** `/api/professional/login`
 
-- **Descrição:** Realiza login do profissional.
-- **Campos obrigatórios:**
+- Descrição: Realiza login do profissional.
+- Campos obrigatórios:
   - login (string: email, cpf ou telefone)
   - password (string)
--   **Request**
+- Exemplo de payload:
 ```json
 {
   "login": "maria@exemplo.com",
   "password": "Senha@123"
 }
 ```
-- **Responses**
+- Respostas:
   - Sucesso:
     - 200:
       ```json
@@ -171,8 +82,8 @@ A aplicação será iniciada em `http://localhost:5000/`
 ### Cadastro de Paciente
 **POST** `/api/patient/register` (requer autenticação de profissional)
 
-- **Descrição:** Cadastra um novo paciente.
-- **Campos obrigatórios:**
+- Descrição: Cadastra um novo paciente.
+- Campos obrigatórios:
   - full_name (string, mínimo 3 caracteres)
   - birth_date (string, formato YYYY-MM-DD)
   - gender (string: M, F ou O)
@@ -183,7 +94,7 @@ A aplicação será iniciada em `http://localhost:5000/`
   - weight (float, >0 e <=500)
   - height (float, >0 e <=3)
   - note (string, opcional)
--   **Request**
+- Exemplo de payload:
 ```json
 {
   "full_name": "João Souza",
@@ -198,7 +109,7 @@ A aplicação será iniciada em `http://localhost:5000/`
   "note": "Paciente com histórico de diabetes"
 }
 ```
-- **Responses**
+- Respostas:
   - Sucesso:
     - 201:
       ```json
@@ -221,18 +132,18 @@ A aplicação será iniciada em `http://localhost:5000/`
 ### Login de Paciente
 **POST** `/api/patient/login`
 
-- **Descrição:** Realiza login do paciente.
-- **Campos obrigatórios:**
+- Descrição: Realiza login do paciente.
+- Campos obrigatórios:
   - login (string: email, cpf ou telefone)
   - password (string)
--   **Request**
+- Exemplo de payload:
 ```json
 {
   "login": "joao@exemplo.com",
   "password": "Senha@123"
 }
 ```
-- **Responses**
+- Respostas:
   - Sucesso:
     - 200:
       ```json
@@ -248,15 +159,15 @@ A aplicação será iniciada em `http://localhost:5000/`
       { "message": "Credenciais inválidas" }
       ```
 
-
+---
 
 ## Pacientes
 
 ### Detalhes do Paciente
 **GET** `/api/patient/<id>`
 
-- **Descrição:** Retorna os dados de um paciente pelo ID.
-- **Responses**
+- Descrição: Retorna os dados de um paciente pelo ID.
+- Respostas:
   - Sucesso:
     - 200:
       ```json
@@ -273,8 +184,8 @@ A aplicação será iniciada em `http://localhost:5000/`
 ### Listar Pacientes de um Profissional
 **GET** `/api/patients/<professional_id>`
 
-- **Descrição:** Lista todos os pacientes de um profissional.
-- **Responses**
+- Descrição: Lista todos os pacientes de um profissional.
+- Respostas:
   - Sucesso:
     - 200:
       ```json
@@ -291,16 +202,16 @@ A aplicação será iniciada em `http://localhost:5000/`
 ### Atualizar Paciente
 **PUT** `/api/patient/<id>` (requer autenticação de profissional)
 
-- **Descrição:** Atualiza os dados de um paciente.
+- Descrição: Atualiza os dados de um paciente.
 - Campos aceitos: full_name, birth_date, gender, email, phone, cpf, weight, height, note (todos opcionais, mas pelo menos um deve ser enviado)
--   **Request**
+- Exemplo de payload:
 ```json
 {
   "full_name": "João Souza Atualizado",
   "weight": 72.0
 }
 ```
-- **Responses**
+- Respostas:
   - Sucesso:
     - 200:
       ```json
@@ -328,8 +239,8 @@ A aplicação será iniciada em `http://localhost:5000/`
 ### Deletar Paciente
 **DELETE** `/api/patient/<id>` (requer autenticação de profissional)
 
-- **Descrição:** Remove um paciente.
-- **Responses**
+- Descrição: Remove um paciente.
+- Respostas:
   - Sucesso:
     - 200:
       ```json
@@ -348,15 +259,15 @@ A aplicação será iniciada em `http://localhost:5000/`
 ### Criar Plano Alimentar
 **POST** `/api/mealplan` (requer autenticação de profissional)
 
-- **Descrição:** Cria um novo plano alimentar para um paciente.
-- **Campos obrigatórios:**
+- Descrição: Cria um novo plano alimentar para um paciente.
+- Campos obrigatórios:
   - patient_id (int)
   - plan_name (string)
   - start_date (string, YYYY-MM-DD)
   - end_date (string, YYYY-MM-DD)
   - goals (string)
   - entries (lista de refeições)
--   **Request**
+- Exemplo de payload:
 ```json
 {
   "patient_id": 1,
@@ -382,7 +293,7 @@ A aplicação será iniciada em `http://localhost:5000/`
   ]
 }
 ```
-- **Responses**
+- Respostas:
   - Sucesso:
     - 201:
       ```json
@@ -405,8 +316,8 @@ A aplicação será iniciada em `http://localhost:5000/`
 ### Obter Plano Alimentar
 **GET** `/api/mealplan/<meal_plan_id>` (requer autenticação)
 
-- **Descrição:** Retorna detalhes de um plano alimentar.
-- **Responses**
+- Descrição: Retorna detalhes de um plano alimentar.
+- Respostas:
   - Sucesso:
     - 200:
       ```json
@@ -427,16 +338,16 @@ A aplicação será iniciada em `http://localhost:5000/`
 ### Atualizar Plano Alimentar
 **PUT** `/api/mealplan/<meal_plan_id>` (requer autenticação de profissional)
 
-- **Descrição:** Atualiza informações básicas do plano alimentar.
+- Descrição: Atualiza informações básicas do plano alimentar.
 - Campos aceitos: plan_name, start_date, end_date, goals
--   **Request**
+- Exemplo de payload:
 ```json
 {
   "plan_name": "Plano Atualizado",
   "goals": "Manter peso"
 }
 ```
-- **Responses**
+- Respostas:
   - Sucesso:
     - 200:
       ```json
@@ -457,8 +368,8 @@ A aplicação será iniciada em `http://localhost:5000/`
 ### Deletar Plano Alimentar
 **DELETE** `/api/mealplan/<meal_plan_id>` (requer autenticação de profissional)
 
-- **Descrição:** Remove um plano alimentar.
-- **Responses**
+- Descrição: Remove um plano alimentar.
+- Respostas:
   - Sucesso:
     - 200:
       ```json
@@ -474,14 +385,37 @@ A aplicação será iniciada em `http://localhost:5000/`
       { "message": "Erro ao deletar plano alimentar: <detalhes>" }
       ```
 
+---
+
+### Listar Planos Alimentares de um Paciente
+**GET** `/api/patient/<patient_id>/mealplans` (requer autenticação)
+
+- Descrição: Lista todos os planos alimentares de um paciente.
+- Respostas:
+  - Sucesso:
+    - 200:
+      ```json
+      { "meal_plans": [ ... ] }
+      ```
+  - Erro:
+    - 404:
+      ```json
+      { "message": "Paciente não encontrado ou acesso não autorizado" }
+      ```
+    - 500:
+      ```json
+      { "message": "Erro ao listar planos alimentares: <detalhes>" }
+      ```
+
+---
 
 ## Alimentos
 
 ### Listar Alimentos
 **GET** `/api/foods` (requer autenticação)
 
-- **Descrição:** Lista todos os alimentos cadastrados, com grupo e nutrientes.
-- **Responses**
+- Descrição: Lista todos os alimentos cadastrados, com grupo e nutrientes.
+- Respostas:
   - Sucesso:
     - 200:
       ```json
@@ -496,6 +430,7 @@ A aplicação será iniciada em `http://localhost:5000/`
 ---
 
 ## Observações Gerais
-- Todos os **Campos obrigatórios** são validados manualmente.
+- Todos os campos obrigatórios são validados manualmente.
+- Mensagens de erro são sempre em português e amigáveis.
 - Status HTTP seguem o padrão REST (200, 201, 400, 401, 403, 404, 409, 500).
 - Para endpoints protegidos, envie o token JWT no header `Authorization: Bearer <token>`.
