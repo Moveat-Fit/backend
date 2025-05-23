@@ -463,7 +463,7 @@ class MealPlanFood(BaseModel):
     preparation_notes: Optional[str] = None
 
 class MealPlanEntry(BaseModel):
-    meal_type_id: int
+    meal_type_name: str
     day_of_plan: date
     time_scheduled: Optional[str] = None
     notes: Optional[str] = None
@@ -535,14 +535,14 @@ class CreateMealPlan(Resource):
             for entry in meal_plan.entries:
                 insert_entry_query = """
                                      INSERT INTO tb_meal_plan_entries
-                                         (meal_plan_id, meal_type_id, day_of_plan, time_scheduled, notes)
+                                         (meal_plan_id, meal_type_name, day_of_plan, time_scheduled, notes)
                                      VALUES (%s, %s, %s, %s, %s) \
                                      """
                 entry_id = execute_query(
                     insert_entry_query,
                     (
                         meal_plan_id,
-                        entry.meal_type_id,
+                        entry.meal_type_name,
                         entry.day_of_plan,
                         entry.time_scheduled,
                         entry.notes
@@ -620,12 +620,12 @@ class GetMealPlan(Resource):
             # Obter todas as entradas do plano
             entries_query = """
                 SELECT 
-                    mpe.id, mpe.meal_type_id, mt.name as meal_type_name,
+                    mpe.id, 
+                    mpe.meal_type_name,
                     DATE_FORMAT(mpe.day_of_plan, '%%Y-%%m-%%d') as day_of_plan,
                     TIME_FORMAT(mpe.time_scheduled, '%%H:%%i') as time_scheduled,
                     mpe.notes
                 FROM tb_meal_plan_entries mpe
-                JOIN tb_meal_types mt ON mpe.meal_type_id = mt.id
                 WHERE mpe.meal_plan_id = %s
                 ORDER BY mpe.day_of_plan, mpe.time_scheduled
             """
@@ -756,35 +756,38 @@ class ListPatientMealPlans(Resource):
             current_user = get_jwt_identity()
             claims = get_jwt()
 
-            # Verificar se o paciente pertence ao profissional ou se é o próprio paciente
-            check_patient_query = """
-                                  SELECT id \
-                                  FROM tb_patients
-                                  WHERE id = %s \
-                                    AND (professional_id = %s OR \
-                                         (claims.get('role') == 'patient' AND id = %s)) \
-                                  """
-            patient = execute_query(
-                check_patient_query,
-                (patient_id, current_user, current_user)
-            )
+            if claims.get('role') == 'professional':
+                check_patient_query = """
+                    SELECT id FROM tb_patients
+                    WHERE id = %s AND professional_id = %s
+                """
+                patient = execute_query(check_patient_query, (patient_id, current_user))
+                
+            elif claims.get('role') == 'patient':
+                check_patient_query = """
+                    SELECT id FROM tb_patients
+                    WHERE id = %s AND id = %s
+                """
+                patient = execute_query(check_patient_query, (patient_id, current_user))
+            else:
+                return {'message': 'Acesso não autorizado'}, 403
 
             if not patient:
                 return {'message': 'Paciente não encontrado ou acesso não autorizado'}, 404
 
             # Listar todos os planos do paciente
             plans_query = """
-                          SELECT id, \
-                                 plan_name, \
-                                 DATE_FORMAT(start_date, '%%Y-%%m-%%d')             as start_date, \
-                                 DATE_FORMAT(end_date, '%%Y-%%m-%%d')               as end_date, \
-                                 goals, \
-                                 DATE_FORMAT(created_at, '%%Y-%%m-%%d %%H:%%i:%%s') as created_at, \
-                                 DATE_FORMAT(updated_at, '%%Y-%%m-%%d %%H:%%i:%%s') as updated_at
-                          FROM tb_patient_meal_plans
-                          WHERE patient_id = %s
-                          ORDER BY start_date DESC \
-                          """
+                SELECT id, \
+                       plan_name, \
+                       DATE_FORMAT(start_date, '%%Y-%%m-%%d')             as start_date, \
+                       DATE_FORMAT(end_date, '%%Y-%%m-%%d')               as end_date, \
+                       goals, \
+                       DATE_FORMAT(created_at, '%%Y-%%m-%%d %%H:%%i:%%s') as created_at, \
+                       DATE_FORMAT(updated_at, '%%Y-%%m-%%d %%H:%%i:%%s') as updated_at
+                FROM tb_patient_meal_plans
+                WHERE patient_id = %s
+                ORDER BY start_date DESC \
+            """
             plans = execute_query(plans_query, (patient_id,))
 
             return {'meal_plans': plans}, 200
