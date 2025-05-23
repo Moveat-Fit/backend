@@ -1,12 +1,13 @@
 from flask_restful import Resource
 from flask import request, jsonify
 import re
+import json
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, get_jwt
 from app.utils.db import execute_query
 from datetime import datetime, date
 import logging
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, model_validator, ValidationError
 from typing import List, Optional
 from app.utils.db import convert_decimal
 
@@ -459,22 +460,22 @@ class UpdatePatient(Resource):
 class MealPlanFood(BaseModel):
     food_id: int
     prescribed_quantity_grams: float = Field(..., gt=0)
-    display_portion: Optional[str] = None
-    preparation_notes: Optional[str] = None
+    display_portion: str  
+    preparation_notes: Optional[str] = None 
 
 class MealPlanEntry(BaseModel):
-    meal_type_id: int
+    meal_type_name: str
     day_of_plan: date
-    time_scheduled: Optional[str] = None
-    notes: Optional[str] = None
+    time_scheduled: str  
+    notes: Optional[str] = None  
     foods: List[MealPlanFood]
 
 class MealPlanCreate(BaseModel):
     patient_id: int
-    plan_name: Optional[str] = "Plano Nutricional Padrão"
+    plan_name: str  
     start_date: date
-    end_date: Optional[date] = None
-    goals: Optional[str] = None
+    end_date: date  
+    goals: str  
     entries: List[MealPlanEntry]
 
 class MealPlanUpdate(BaseModel):
@@ -487,27 +488,106 @@ class MealPlanUpdate(BaseModel):
 class CreateMealPlan(Resource):
     @jwt_required()
     def post(self):
+
+        # verificação: nutricionista logado?
+        current_user = get_jwt_identity()
+        claims = get_jwt()
+        if claims.get('role') != 'professional':
+            return {'message': 'Acesso não autorizado'}, 403
+
+        data = request.get_json()
+
+        # verificação: paciente já possui plano alimentar?
+        patient_id = data.get('patient_id')
+        check_patient_query = "SELECT id FROM tb_patient_meal_plans WHERE patient_id = %s"
+        existing_plan = execute_query(check_patient_query, (patient_id,))
+        if existing_plan:
+            return {'message': 'Este paciente já possui um plano alimentar cadastrado'}, 409
+
+        field_names = {
+            'patient_id': 'Paciente',
+            'plan_name': 'Nome do plano',
+            'start_date': 'Data de início',
+            'end_date': 'Data de término',
+            'goals': 'Objetivo',
+            'entries': 'Entradas',
+            'meal_type_name': 'Tipo da refeição',
+            'day_of_plan': 'Dia do plano',
+            'time_scheduled': 'Horário',
+            'notes': 'Observações',
+            'foods': 'Alimentos',
+            'food_id': 'Alimento',
+            'prescribed_quantity_grams': 'Quantidade prescrita (g)',
+            'display_portion': 'Porção exibida',
+            'preparation_notes': 'Modo de preparo'
+        }
+
+        # validações de campos
+
+        required_fields = ['patient_id', 'plan_name', 'start_date', 'end_date', 'goals', 'entries']
+        for field in required_fields:
+            if not data.get(field) or (isinstance(data.get(field), str) and not data.get(field).strip()):
+                return {'message': f'O campo \'{field_names[field]}\' é obrigatório e não pode ser vazio'}, 400
+            
         try:
-            current_user = get_jwt_identity()
-            claims = get_jwt()
+            patient_id = int(data['patient_id'])
+        except Exception:
+            return {'message': 'patient_id deve ser um número inteiro'}, 400
 
-            if claims.get('role') != 'professional':
-                return {'message': 'Acesso não autorizado'}, 403
+        try:
+            datetime.strptime(data['start_date'], '%Y-%m-%d')
+            datetime.strptime(data['end_date'], '%Y-%m-%d')
+        except Exception:
+            return {'message': 'Data de início e data de término devem estar no formato YYYY-MM-DD'}, 400
 
-            data = request.get_json()
-            meal_plan = MealPlanCreate(**data)
+        if not isinstance(data['entries'], list) or not data['entries']:
+            return {'message': 'entries deve ser uma lista não vazia'}, 400
 
-            # Verificar se o paciente pertence ao profissional
-            check_patient_query = """
-                                  SELECT id \
-                                  FROM tb_patients
-                                  WHERE id = %s \
-                                    AND professional_id = %s \
-                                  """
-            patient = execute_query(check_patient_query, (meal_plan.patient_id, current_user))
+        # validação manual dos campos obrigatórios dentro de cada 'entries'
+        for idx, entry in enumerate(data['entries']):
+            for field in ['meal_type_name', 'day_of_plan', 'time_scheduled', 'foods']:
+                if not entry.get(field) or (isinstance(entry.get(field), str) and not entry.get(field).strip()):
+                    return {'message': f'O campo  \'{field_names[field]}\' é obrigatório e não pode ser vazio'}, 400
 
-            if not patient:
-                return {'message': 'Paciente não encontrado ou não pertence ao profissional'}, 404
+            try:
+                datetime.strptime(entry['day_of_plan'], '%Y-%m-%d')
+            except Exception:
+                return {'message': f'Dia do plano deve estar no formato YYYY-MM-DD na entrada {idx+1}'}, 400
+
+            if not re.match(r'^\d{2}:\d{2}$', entry['time_scheduled']):
+                return {'message': f'Horário deve estar no formato HH:MM na entrada {idx+1}'}, 400
+
+            if not isinstance(entry['foods'], list) or not entry['foods']:
+                return {'message': f'Alimentos é obrigatório na entrada {idx+1} e não pode ser vazio'}, 400
+
+
+            for fidx, food in enumerate(entry['foods']):
+                for field in ['food_id', 'prescribed_quantity_grams', 'display_portion']:
+                    if not food.get(field) and food.get(field) != 0:
+                        return {'message': f'O campo  \'{field_names[field]} \' é obrigatório no alimento {fidx+1} da entrada {idx+1} e não pode ser vazio'}, 400
+
+                try:
+                    food_id = int(food['food_id'])
+                except Exception:
+                    return {'message': f'Alimento deve ser inteiro no alimento {fidx+1} da entrada {idx+1}'}, 400
+
+                try:
+                    prescribed_quantity = float(food['prescribed_quantity_grams'])
+                    if prescribed_quantity <= 0:
+                        return {'message': f'Quantidade prescrita (g) deve ser maior que 0 no alimento {fidx+1} da entrada {idx+1}'}, 400
+                except Exception:
+                    return {'message': f'Quantidade prescrita (g) deve ser um número no alimento {fidx+1} da entrada {idx+1}'}, 400
+
+                if not isinstance(food['display_portion'], str) or not food['display_portion'].strip():
+                    return {'message': f'Porção exibida deve ser uma string não vazia no alimento {fidx+1} da entrada {idx+1}'}, 400
+
+        try:
+            patient_id = data['patient_id']
+            plan_name = data['plan_name']
+            start_date = data['start_date']
+            end_date = data['end_date']
+            goals = data['goals']
+            entries = data['entries']
 
             # Inserir o plano alimentar principal
             insert_meal_plan_query = """
@@ -518,12 +598,12 @@ class CreateMealPlan(Resource):
             meal_plan_id = execute_query(
                 insert_meal_plan_query,
                 (
-                    meal_plan.patient_id,
+                    patient_id,
                     current_user,
-                    meal_plan.plan_name,
-                    meal_plan.start_date,
-                    meal_plan.end_date,
-                    meal_plan.goals
+                    plan_name,
+                    start_date,
+                    end_date,
+                    goals
                 ),
                 return_id=True
             )
@@ -532,20 +612,20 @@ class CreateMealPlan(Resource):
                 return {'message': 'Erro ao criar plano alimentar'}, 500
 
             # Inserir as entradas do plano
-            for entry in meal_plan.entries:
+            for entry in entries:
                 insert_entry_query = """
                                      INSERT INTO tb_meal_plan_entries
-                                         (meal_plan_id, meal_type_id, day_of_plan, time_scheduled, notes)
+                                         (meal_plan_id, meal_type_name, day_of_plan, time_scheduled, notes)
                                      VALUES (%s, %s, %s, %s, %s) \
                                      """
                 entry_id = execute_query(
                     insert_entry_query,
                     (
                         meal_plan_id,
-                        entry.meal_type_id,
-                        entry.day_of_plan,
-                        entry.time_scheduled,
-                        entry.notes
+                        entry['meal_type_name'],
+                        entry['day_of_plan'],
+                        entry['time_scheduled'],
+                        entry.get('notes')
                     ),
                     return_id=True
                 )
@@ -554,7 +634,7 @@ class CreateMealPlan(Resource):
                     continue  # Ou tratar erro de forma mais apropriada
 
                 # Inserir os alimentos de cada entrada
-                for food in entry.foods:
+                for food in entry['foods']:
                     insert_food_query = """
                                         INSERT INTO tb_meal_plan_foods
                                         (meal_plan_entry_id, food_id, prescribed_quantity_grams, display_portion, \
@@ -565,10 +645,10 @@ class CreateMealPlan(Resource):
                         insert_food_query,
                         (
                             entry_id,
-                            food.food_id,
-                            food.prescribed_quantity_grams,
-                            food.display_portion,
-                            food.preparation_notes
+                            food['food_id'],
+                            food['prescribed_quantity_grams'],
+                            food['display_portion'],
+                            food.get('preparation_notes')
                         )
                     )
 
@@ -620,12 +700,12 @@ class GetMealPlan(Resource):
             # Obter todas as entradas do plano
             entries_query = """
                 SELECT 
-                    mpe.id, mpe.meal_type_id, mt.name as meal_type_name,
+                    mpe.id, 
+                    mpe.meal_type_name,
                     DATE_FORMAT(mpe.day_of_plan, '%%Y-%%m-%%d') as day_of_plan,
                     TIME_FORMAT(mpe.time_scheduled, '%%H:%%i') as time_scheduled,
                     mpe.notes
                 FROM tb_meal_plan_entries mpe
-                JOIN tb_meal_types mt ON mpe.meal_type_id = mt.id
                 WHERE mpe.meal_plan_id = %s
                 ORDER BY mpe.day_of_plan, mpe.time_scheduled
             """
@@ -749,107 +829,93 @@ class DeleteMealPlan(Resource):
             return {'message': f'Erro ao deletar plano alimentar: {str(e)}'}, 500
 
 
-class ListPatientMealPlans(Resource):
-    @jwt_required()
-    def get(self, patient_id):
-        try:
-            current_user = get_jwt_identity()
-            claims = get_jwt()
+# class ListPatientMealPlans(Resource):
+#     @jwt_required()
+#     def get(self, patient_id):
+#         try:
+#             current_user = get_jwt_identity()
+#             claims = get_jwt()
 
-            # Verificar se o paciente pertence ao profissional ou se é o próprio paciente
-            check_patient_query = """
-                                  SELECT id \
-                                  FROM tb_patients
-                                  WHERE id = %s \
-                                    AND (professional_id = %s OR \
-                                         (claims.get('role') == 'patient' AND id = %s)) \
-                                  """
-            patient = execute_query(
-                check_patient_query,
-                (patient_id, current_user, current_user)
-            )
+#             if claims.get('role') == 'professional':
+#                 check_patient_query = """
+#                     SELECT id FROM tb_patients
+#                     WHERE id = %s AND professional_id = %s
+#                 """
+#                 patient = execute_query(check_patient_query, (patient_id, current_user))
+                
+#             elif claims.get('role') == 'patient':
+#                 check_patient_query = """
+#                     SELECT id FROM tb_patients
+#                     WHERE id = %s AND id = %s
+#                 """
+#                 patient = execute_query(check_patient_query, (patient_id, current_user))
+#             else:
+#                 return {'message': 'Acesso não autorizado'}, 403
 
-            if not patient:
-                return {'message': 'Paciente não encontrado ou acesso não autorizado'}, 404
+#             if not patient:
+#                 return {'message': 'Paciente não encontrado ou acesso não autorizado'}, 404
 
-            # Listar todos os planos do paciente
-            plans_query = """
-                          SELECT id, \
-                                 plan_name, \
-                                 DATE_FORMAT(start_date, '%%Y-%%m-%%d')             as start_date, \
-                                 DATE_FORMAT(end_date, '%%Y-%%m-%%d')               as end_date, \
-                                 goals, \
-                                 DATE_FORMAT(created_at, '%%Y-%%m-%%d %%H:%%i:%%s') as created_at, \
-                                 DATE_FORMAT(updated_at, '%%Y-%%m-%%d %%H:%%i:%%s') as updated_at
-                          FROM tb_patient_meal_plans
-                          WHERE patient_id = %s
-                          ORDER BY start_date DESC \
-                          """
-            plans = execute_query(plans_query, (patient_id,))
+#             # Listar todos os planos do paciente
+#             plans_query = """
+#                 SELECT id, \
+#                        plan_name, \
+#                        DATE_FORMAT(start_date, '%%Y-%%m-%%d')             as start_date, \
+#                        DATE_FORMAT(end_date, '%%Y-%%m-%%d')               as end_date, \
+#                        goals, \
+#                        DATE_FORMAT(created_at, '%%Y-%%m-%%d %%H:%%i:%%s') as created_at, \
+#                        DATE_FORMAT(updated_at, '%%Y-%%m-%%d %%H:%%i:%%s') as updated_at
+#                 FROM tb_patient_meal_plans
+#                 WHERE patient_id = %s
+#                 ORDER BY start_date DESC \
+#             """
+#             plans = execute_query(plans_query, (patient_id,))
 
-            return {'meal_plans': plans}, 200
+#             return {'meal_plans': plans}, 200
 
-        except Exception as e:
-            logger.error(f"Erro ao listar planos alimentares: {str(e)}", exc_info=True)
-            return {'message': f'Erro ao listar planos alimentares: {str(e)}'}, 500
+#         except Exception as e:
+#             logger.error(f"Erro ao listar planos alimentares: {str(e)}", exc_info=True)
+#             return {'message': f'Erro ao listar planos alimentares: {str(e)}'}, 500 
 
-
-class FoodList(Resource):
+class FoodList(Resource): ## AJUSTAR DEPOIS DO BANCO
     @jwt_required()
     def get(self):
         try:
-            # Verificar se o usuário está autenticado (profissional ou paciente)
             current_user = get_jwt_identity()
             claims = get_jwt()
 
-            # Consulta para obter todos os alimentos com seus grupos e nutrientes
             query = """
-                    SELECT f.id, 
-                           f.name, 
-                           f.default_portion_description, 
-                           f.default_portion_grams, 
-                           fg.name as food_group, 
-                           GROUP_CONCAT( 
-                                   CONCAT( 
-                                           n.name, ' (', \
-                                           ROUND(fn.amount_per_100_unit, 1), ' ', 
-                                           n.unit, ')' 
-                                   ) SEPARATOR ', ' 
-                           )       as nutrients_summary, 
-                           JSON_ARRAYAGG( 
-                                   JSON_OBJECT( 
-                                           'nutrient_id', n.id, 
-                                           'nutrient_name', n.name, 
-                                           'unit', n.unit, 
-                                           'amount_per_100_unit', ROUND(fn.amount_per_100_unit, 1) 
-                                   ) 
-                           )       as nutrients_detail
-                    FROM tb_foods f
-                             LEFT JOIN tb_food_groups fg ON f.food_group_id = fg.id
-                             LEFT JOIN tb_food_nutrients fn ON f.id = fn.food_id
-                             LEFT JOIN tb_nutrients n ON fn.nutrient_id = n.id
-                    GROUP BY f.id
-                    ORDER BY f.name 
-                    """
+                SELECT 
+                    f.id,
+                    f.name,
+                    fg.name as food_group,
+                    f.default_portion_grams,
+                    -- Busca o valor energético (kcal) do alimento
+                    MAX(CASE WHEN n.name IN ('Valor Energético', 'Energia', 'Calorias', 'Kcal') THEN fn.amount_per_100_unit END) as kcal
+                FROM tb_foods f
+                LEFT JOIN tb_food_groups fg ON f.food_group_id = fg.id
+                LEFT JOIN tb_food_nutrients fn ON f.id = fn.food_id
+                LEFT JOIN tb_nutrients n ON fn.nutrient_id = n.id
+                GROUP BY f.id, f.name, fg.name, f.default_portion_grams
+                ORDER BY f.id ASC
+            """
 
             foods = execute_query(query)
 
-            formatted_foods = []
+            result = []
             for food in foods:
-                formatted_food = {
-                    'id': food['id'],
-                    'name': food['name'],
-                    'food_group': food['food_group'],
-                    'default_portion': {
-                        'description': food['default_portion_description'],
-                        'grams': float(food['default_portion_grams']) if food['default_portion_grams'] else None
-                    },
-                    'nutrients_summary': food['nutrients_summary'],
-                    'nutrients_detail': food['nutrients_detail'] if food['nutrients_detail'] else []
+                default_portion = {
+                    "grams": float(food['default_portion_grams']) if food['default_portion_grams'] is not None else None,
+                    "energy_value_kcal": float(food['kcal']) if food['kcal'] is not None else None
                 }
-                formatted_foods.append(formatted_food)
+                formatted_food = {
+                    "id": food['id'],
+                    "name": food['name'],
+                    "food_group": food['food_group'],
+                    "default_portion": default_portion
+                }
+                result.append(formatted_food)
 
-            return {'foods': formatted_foods}, 200
+            return result, 200
 
         except Exception as e:
             logger.error(f"Erro ao listar alimentos: {str(e)}", exc_info=True)

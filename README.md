@@ -1,23 +1,40 @@
-# Documentação Moveat-Fit Backend
+# Documentação Moveat Backend
 
-## 📌 Sumário
+- [Documentação Moveat Backend](#documentação-moveat-backend)
+  - [Visão Geral](#visão-geral)
+  - [Tecnologias Utilizadas](#tecnologias-utilizadas)
+  - [Instalação](#instalação)
+  - [Executando a Aplicação](#executando-a-aplicação)
+- [📡 Endpoints da API](#-endpoints-da-api)
+  - [Autenticação](#autenticação)
+    - [Cadastro de Profissional](#cadastro-de-profissional)
+    - [Login de Profissional](#login-de-profissional)
+    - [Cadastro de Paciente](#cadastro-de-paciente)
+    - [Login de Paciente](#login-de-paciente)
+  - [Pacientes](#pacientes)
+    - [Detalhes do Paciente](#detalhes-do-paciente)
+    - [Listar Pacientes de um Profissional](#listar-pacientes-de-um-profissional)
+    - [Atualizar Paciente](#atualizar-paciente)
+    - [Deletar Paciente](#deletar-paciente)
+  - [Planos Alimentares](#planos-alimentares)
+    - [Criar Plano Alimentar](#criar-plano-alimentar)
+    - [Obter Plano Alimentar](#obter-plano-alimentar)
+    - [Atualizar Plano Alimentar](#atualizar-plano-alimentar)
+    - [Deletar Plano Alimentar](#deletar-plano-alimentar)
+  - [Alimentos](#alimentos)
+    - [Listar Alimentos](#listar-alimentos)
+  - [Observações Gerais](#observações-gerais)
 
-* [Visão Geral](#visão-geral)
-* [Tecnologias Utilizadas](#tecnologias-utilizadas)
-* [Instalação](#instalação)
-* [Executando a Aplicação](#executando-a-aplicação)
-* [Endpoints da API](#endpoints-da-api)
-* [Exemplos de Requisições e Respostas](#exemplos-de-requisições-e-respostas)
+<br>
 
----
 
-## 📖 Visão Geral
+##  Visão Geral
 
 Esta API serve como backend para um sistema nutricional, permitindo o cadastro e gerenciamento de profissionais de nutrição, pacientes, alimentos e planos alimentares.
 
----
 
-## 🧰 Tecnologias Utilizadas
+
+## Tecnologias Utilizadas
 
 * Python 3.11+
 * Flask
@@ -28,9 +45,8 @@ Esta API serve como backend para um sistema nutricional, permitindo o cadastro e
 * python-dotenv
 * JWT (Json Web Token)
 
----
 
-## 💾 Instalação
+## Instalação
 
 1. Clone o repositório:
 
@@ -62,9 +78,8 @@ MYSQL_PASSWORD=
 MYSQL_DB=
 ```
 
----
 
-## 🚀 Executando a Aplicação
+## Executando a Aplicação
 
 ```bash
 python app.py
@@ -72,316 +87,415 @@ python app.py
 
 A aplicação será iniciada em `http://localhost:5000/`
 
----
+<br>
 
-## 📡 Endpoints da API
+# 📡 Endpoints da API
 
-### 👤 Profissionais
+## Autenticação
 
-* `POST /register`: Criação de um novo profissional
-* `POST /professional`: Login de profissional
+### Cadastro de Profissional
+**POST** `/api/professional/register`
 
-### 🧑 Pacientes
-
-* `POST /register/patient`: Cadastro de paciente
-* `GET /patients`: Lista todos os pacientes (auth JWT)
-* `GET /patients/<id>`: Detalhes de um paciente (auth JWT)
-
-### 🍽️ Planos Alimentares
-
-* `POST /meal-plans`: Criação de plano alimentar
-* `GET /meal-plans/<patient_id>`: Listagem por paciente
-
----
-
-## 📬 Exemplos de Requisições e Respostas
-
-### 🔐 POST `/register`
-
-**Campos obrigatórios:**
-
-* `full_name` (string)
-* `email` (string)
-* `password` (string)
-* `cpf` (string)
-* `phone` (string)
-* `regional_council_type` (string)
-* `regional_council` (string)
-
-**Requisição:**
-
+- **Descrição:** Cadastra um novo profissional.
+- **Campos obrigatórios:**
+  - full_name (string, mínimo 3 caracteres)
+  - email (string, formato válido)
+  - password (string, mínimo 8 caracteres, 1 maiúscula, 1 minúscula, 1 número, 1 especial)
+  - cpf (string, 11 dígitos numéricos)
+  - phone (string, 11 dígitos numéricos)
+  - regional_council_type (string)
+  - regional_council (string)
+-   **Request**
 ```json
 {
-  "full_name": "Nome Completo",
-  "email": "email@example.com",
-  "password": "Senha123!",
+  "full_name": "Maria Silva",
+  "email": "maria@exemplo.com",
+  "password": "Senha@123",
   "cpf": "12345678901",
-  "phone": "11987654321",
+  "phone": "11999999999",
   "regional_council_type": "CRN",
   "regional_council": "12345"
 }
 ```
-
-**Respostas:**
-
-* `201 Created`:
-
-```json
-{
-  "message": "Profissional registrado com sucesso",
-  "access_token": "<jwt_token>"
-}
-```
-
-* `400 Bad Request`:
-
-```json
-{
-  "error": "Campos obrigatórios ausentes ou inválidos"
-}
-```
-
-* `409 Conflict`:
-
-```json
-{
-  "error": "Usuário já existente"
-}
-```
+- **Responses**
+  - Sucesso:
+    - 201:
+      ```json
+      { "message": "Profissional registrado com sucesso", "access_token": "..." }
+      ```
+  - Erro:
+    - 400:
+      ```json
+      { "message": "O campo full_name é obrigatório" }
+      { "message": "Formato de CPF inválido" }
+      ```
+    - 409:
+      ```json
+      { "message": "Email, CPF ou número de telefone já registrado" }
+      ```
 
 ---
 
-### 🔐 POST `/professional`
+### Login de Profissional
+**POST** `/api/professional/login`
 
-**Campos obrigatórios:**
-
-* `login` (string)
-* `password` (string)
-
-**Requisição:**
-
+- **Descrição:** Realiza login do profissional.
+- **Campos obrigatórios:**
+  - login (string: email, cpf ou telefone)
+  - password (string)
+-   **Request**
 ```json
 {
-  "login": "email@example.com",
-  "password": "Senha123!"
+  "login": "maria@exemplo.com",
+  "password": "Senha@123"
 }
 ```
-
-**Respostas:**
-
-* `200 OK`:
-
-```json
-{
-  "access_token": "<jwt_token>"
-}
-```
-
-* `401 Unauthorized`:
-
-```json
-{
-  "error": "Credenciais inválidas"
-}
-```
+- **Responses**
+  - Sucesso:
+    - 200:
+      ```json
+      { "access_token": "..." }
+      ```
+  - Erro:
+    - 400:
+      ```json
+      { "message": "E-mail e senha são obrigatórios" }
+      ```
+    - 401:
+      ```json
+      { "message": "Credenciais inválidas" }
+      ```
 
 ---
 
-### 👶 POST `/register/patient`
+### Cadastro de Paciente
+**POST** `/api/patient/register` (requer autenticação de profissional)
 
-**Campos obrigatórios:**
-
-* `full_name`, `birth_date`, `gender`, `email`, `password`, `mobile`, `cpf`, `weight`, `height`
-
-**Requisição:**
-
+- **Descrição:** Cadastra um novo paciente.
+- **Campos obrigatórios:**
+  - full_name (string, mínimo 3 caracteres)
+  - birth_date (string, formato YYYY-MM-DD)
+  - gender (string: M, F ou O)
+  - email (string, formato válido)
+  - password (string, mínimo 8 caracteres, 1 maiúscula, 1 minúscula, 1 número, 1 especial)
+  - phone (string, 11 dígitos numéricos)
+  - cpf (string, 11 dígitos numéricos)
+  - weight (float, >0 e <=500)
+  - height (float, >0 e <=3)
+  - note (string, opcional)
+-   **Request**
 ```json
 {
-  "full_name": "Nome Paciente",
-  "birth_date": "1990-01-01",
+  "full_name": "João Souza",
+  "birth_date": "2000-01-01",
   "gender": "M",
-  "email": "paciente@example.com",
-  "password": "Senha123!",
-  "mobile": "11999999999",
+  "email": "joao@exemplo.com",
+  "password": "Senha@123",
+  "phone": "11988888888",
   "cpf": "98765432100",
   "weight": 70.5,
   "height": 1.75,
-  "note": "Paciente com meta de emagrecimento"
+  "note": "Paciente com histórico de diabetes"
 }
 ```
-
-**Respostas:**
-
-* `201 Created`:
-
-```json
-{
-  "message": "Paciente registrado com sucesso"
-}
-```
-
-* `400 Bad Request`:
-
-```json
-{
-  "error": "Campos obrigatórios ausentes ou inválidos"
-}
-```
-
-* `401 Unauthorized`:
-
-```json
-{
-  "error": "Token JWT ausente ou inválido"
-}
-```
+- **Responses**
+  - Sucesso:
+    - 201:
+      ```json
+      { "message": "Paciente registrado com sucesso", "patient_id": 1 }
+      ```
+  - Erro:
+    - 400:
+      ```json
+      { "message": "Nome completo deve ter pelo menos 3 caracteres" }
+      { "message": "Data de nascimento deve estar no formato YYYY-MM-DD" }
+      { "message": "Peso deve ser um número válido" }
+      ```
+    - 409:
+      ```json
+      { "message": "Email, CPF ou número de telefone já registrado" }
+      ```
 
 ---
 
-### 📋 POST `/meal-plans`
+### Login de Paciente
+**POST** `/api/patient/login`
 
-**Campos obrigatórios:**
+- **Descrição:** Realiza login do paciente.
+- **Campos obrigatórios:**
+  - login (string: email, cpf ou telefone)
+  - password (string)
+-   **Request**
+```json
+{
+  "login": "joao@exemplo.com",
+  "password": "Senha@123"
+}
+```
+- **Responses**
+  - Sucesso:
+    - 200:
+      ```json
+      { "access_token": "..." }
+      ```
+  - Erro:
+    - 400:
+      ```json
+      { "message": "Login e senha são obrigatórios" }
+      ```
+    - 401:
+      ```json
+      { "message": "Credenciais inválidas" }
+      ```
 
-* `patient_id`, `plan_name`, `start_date`, `end_date`, `goals`, `entries[]`
-* Dentro de `entries[]`: `meal_type_id`, `day_of_plan`, `time_scheduled`, `foods[]`
-* Dentro de `foods[]`: `food_id`, `prescribed_quantity_grams`, `display_portion`
 
-**Requisição:**
 
+## Pacientes
+
+### Detalhes do Paciente
+**GET** `/api/patient/<id>`
+
+- **Descrição:** Retorna os dados de um paciente pelo ID.
+- **Responses**
+  - Sucesso:
+    - 200:
+      ```json
+      { "patient": { ...dados do paciente... } }
+      ```
+  - Erro:
+    - 404:
+      ```json
+      { "message": "O paciente com id <id> não foi encontrado." }
+      ```
+
+---
+
+### Listar Pacientes de um Profissional
+**GET** `/api/patients/<professional_id>`
+
+- **Descrição:** Lista todos os pacientes de um profissional.
+- **Responses**
+  - Sucesso:
+    - 200:
+      ```json
+      { "patients": [ ... ] }
+      ```
+  - Erro:
+    - 404:
+      ```json
+      { "message": "Nenhum paciente encontrado para este profissional" }
+      ```
+
+---
+
+### Atualizar Paciente
+**PUT** `/api/patient/<id>` (requer autenticação de profissional)
+
+- **Descrição:** Atualiza os dados de um paciente.
+- Campos aceitos: full_name, birth_date, gender, email, phone, cpf, weight, height, note (todos opcionais, mas pelo menos um deve ser enviado)
+-   **Request**
+```json
+{
+  "full_name": "João Souza Atualizado",
+  "weight": 72.0
+}
+```
+- **Responses**
+  - Sucesso:
+    - 200:
+      ```json
+      { "message": "Dados do paciente atualizados com sucesso" }
+      ```
+  - Erro:
+    - 400:
+      ```json
+      { "message": "Nenhum campo válido para atualização" }
+      { "message": "Peso deve ser um número válido" }
+      ```
+    - 404:
+      ```json
+      { "message": "Paciente não encontrado ou não pertence ao profissional" }
+      ```
+    - 409:
+      ```json
+      { "message": "Email já registrado" }
+      { "message": "CPF já registrado" }
+      { "message": "Número de telefone já registrado" }
+      ```
+
+---
+
+### Deletar Paciente
+**DELETE** `/api/patient/<id>` (requer autenticação de profissional)
+
+- **Descrição:** Remove um paciente.
+- **Responses**
+  - Sucesso:
+    - 200:
+      ```json
+      { "message": "Paciente deletado com sucesso" }
+      ```
+  - Erro:
+    - 404:
+      ```json
+      { "message": "Paciente não encontrado ou não pertence ao profissional" }
+      ```
+
+---
+
+## Planos Alimentares
+
+### Criar Plano Alimentar
+**POST** `/api/mealplan` (requer autenticação de profissional)
+
+- **Descrição:** Cria um novo plano alimentar para um paciente.
+- **Campos obrigatórios:**
+  - patient_id (int)
+  - plan_name (string)
+  - start_date (string, YYYY-MM-DD)
+  - end_date (string, YYYY-MM-DD)
+  - goals (string)
+  - entries (lista de refeições)
+-   **Request**
 ```json
 {
   "patient_id": 1,
-  "plan_name": "Plano Nutricional",
-  "start_date": "2023-01-01",
-  "end_date": "2023-02-01",
-  "goals": "Perda de peso",
+  "plan_name": "Plano de Emagrecimento",
+  "start_date": "2024-06-01",
+  "end_date": "2024-06-30",
+  "goals": "Perder peso",
   "entries": [
     {
-      "meal_type_id": 1,
-      "day_of_plan": "2023-01-01",
+      "meal_type_name": "Café da manhã",
+      "day_of_plan": "2024-06-01",
       "time_scheduled": "08:00",
-      "notes": "Café da manhã",
+      "notes": "Evitar açúcar",
       "foods": [
         {
-          "food_id": 1,
-          "prescribed_quantity_grams": 100,
-          "display_portion": "1 xícara",
-          "preparation_notes": "Sem açúcar"
+          "food_id": 10,
+          "prescribed_quantity_grams": 50,
+          "display_portion": "1 fatia",
+          "preparation_notes": "Grelhado"
         }
       ]
     }
   ]
 }
 ```
-
-**Respostas:**
-
-* `201 Created`:
-
-```json
-{
-  "message": "Plano alimentar criado com sucesso",
-  "meal_plan_id": 1
-}
-```
-
-* `400 Bad Request`:
-
-```json
-{
-  "error": "Dados inválidos para criação do plano"
-}
-```
-
-* `401 Unauthorized`:
-
-```json
-{
-  "error": "Token JWT ausente ou inválido"
-}
-```
-
-
-### 🍎 `GET /api/foods`
-
-
-
-**Requisição:**
-```json
- http://127.0.0.1:5000/api/foods
-```
-**Respostas:**
-* *`200 OK (Sucesso):`*
-
-```json
-{
-  "foods": [
-    {
-      "id": 1,
-      "name": "Arroz branco cozido",
-      "food_group": "Cereais",
-      "default_portion": {
-        "description": "50g",
-        "grams": 50.0
-      },
-      "nutrients_summary": "Valor Energético (354.0 kcal), Proteína Total (7.8 g)...",
-      "nutrients_detail": [
-        {
-          "nutrient_id": 1,
-          "nutrient_name": "Valor Energético",
-          "unit": "kcal",
-          "amount_per_100_unit": 354.0
-        }
-      ]
-    }
-  ],
-  "pagination": {
-    "current_page": 2,
-    "per_page": 20,
-    "total_items": 45,
-    "total_pages": 3
-  }
-}
-```
-* *`400 Bad Request (Parâmetros inválidos):`*
-
-```json
-{
-  "error": "Parâmetros inválidos",
-  "details": {
-    "group_id": "Deve ser um número inteiro"
-  }
-```
-
-* *`401 Unauthorized (Token inválido):`*
-
-```json
-{
-  "error": "Token JWT ausente ou inválido"
-}
-```
-* *`500 Internal Server Error (Erro no servidor):`*
-
-```json
-{
-  "error": "Erro ao processar a requisição"
-}
-```
-
-
-
+- **Responses**
+  - Sucesso:
+    - 201:
+      ```json
+      { "message": "Plano alimentar criado com sucesso", "meal_plan_id": 1 }
+      ```
+  - Erro:
+    - 400:
+      ```json
+      { "message": "O campo 'Nome do plano' é obrigatório e não pode ser vazio" }
+      { "message": "Data de início e data de término devem estar no formato YYYY-MM-DD" }
+      { "message": "Quantidade prescrita (g) deve ser maior que 0 no alimento 1 da entrada 1" }
+      ```
+    - 500:
+      ```json
+      { "message": "Erro ao criar plano alimentar: <detalhes>" }
+      ```
 
 ---
 
-## ⚠️ Códigos de Status Comuns
+### Obter Plano Alimentar
+**GET** `/api/mealplan/<meal_plan_id>` (requer autenticação)
 
-| Código | Significado  | Quando ocorre                                   |
-| ------ | ------------ | ----------------------------------------------- |
-| 200    | OK           | Requisição bem-sucedida                         |
-| 201    | Created      | Recurso criado com sucesso                      |
-| 400    | Bad Request  | Dados ausentes, inválidos ou malformados        |
-| 401    | Unauthorized | Token JWT ausente, inválido ou expirado         |
-| 404    | Not Found    | Recurso não encontrado                          |
-| 409    | Conflict     | Conflito de dados, como e-mail ou CPF duplicado |
+- **Descrição:** Retorna detalhes de um plano alimentar.
+- **Responses**
+  - Sucesso:
+    - 200:
+      ```json
+      { "meal_plan": { ...dados do plano alimentar... } }
+      ```
+  - Erro:
+    - 404:
+      ```json
+      { "message": "Plano alimentar não encontrado ou acesso não autorizado" }
+      ```
+    - 500:
+      ```json
+      { "message": "Erro ao obter plano alimentar: <detalhes>" }
+      ```
 
 ---
+
+### Atualizar Plano Alimentar
+**PUT** `/api/mealplan/<meal_plan_id>` (requer autenticação de profissional)
+
+- **Descrição:** Atualiza informações básicas do plano alimentar.
+- Campos aceitos: plan_name, start_date, end_date, goals
+-   **Request**
+```json
+{
+  "plan_name": "Plano Atualizado",
+  "goals": "Manter peso"
+}
+```
+- **Responses**
+  - Sucesso:
+    - 200:
+      ```json
+      { "message": "Plano alimentar atualizado com sucesso" }
+      ```
+  - Erro:
+    - 404:
+      ```json
+      { "message": "Plano alimentar não encontrado ou não pertence ao profissional" }
+      ```
+    - 500:
+      ```json
+      { "message": "Erro ao atualizar plano alimentar: <detalhes>" }
+      ```
+
+---
+
+### Deletar Plano Alimentar
+**DELETE** `/api/mealplan/<meal_plan_id>` (requer autenticação de profissional)
+
+- **Descrição:** Remove um plano alimentar.
+- **Responses**
+  - Sucesso:
+    - 200:
+      ```json
+      { "message": "Plano alimentar deletado com sucesso" }
+      ```
+  - Erro:
+    - 404:
+      ```json
+      { "message": "Plano alimentar não encontrado ou não pertence ao profissional" }
+      ```
+    - 500:
+      ```json
+      { "message": "Erro ao deletar plano alimentar: <detalhes>" }
+      ```
+
+
+## Alimentos
+
+### Listar Alimentos
+**GET** `/api/foods` (requer autenticação)
+
+- **Descrição:** Lista todos os alimentos cadastrados, com grupo e nutrientes.
+- **Responses**
+  - Sucesso:
+    - 200:
+      ```json
+      { "foods": [ ... ] }
+      ```
+  - Erro:
+    - 500:
+      ```json
+      { "message": "Erro ao listar alimentos: <detalhes>" }
+      ```
+
+---
+
+## Observações Gerais
+- Todos os **Campos obrigatórios** são validados manualmente.
+- Status HTTP seguem o padrão REST (200, 201, 400, 401, 403, 404, 409, 500).
+- Para endpoints protegidos, envie o token JWT no header `Authorization: Bearer <token>`.
