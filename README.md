@@ -1,23 +1,29 @@
-# Documentação Moveat-Fit Backend
+# Documentação Moveat Backend
 
-## 📌 Sumário
+- [Documentação Moveat Backend](#documentação-moveat-backend)
+  - [Visão Geral](#visão-geral)
+  - [Tecnologias Utilizadas](#tecnologias-utilizadas)
+  - [Instalação](#instalação)
+  - [Executando a Aplicação](#executando-a-aplicação)
+- [📡 Endpoints da API](#-endpoints-da-api)
+  - [📬 Exemplos de Requisições e Respostas](#-exemplos-de-requisições-e-respostas)
+    - [🔐 POST `/register`](#-post-register)
+    - [🔐 POST `/professional`](#-post-professional)
+    - [👶 POST `/register/patient`](#-post-registerpatient)
+    - [📋 POST `/meal-plans`](#-post-meal-plans)
+    - [🍎 `GET /api/foods`](#-get-apifoods)
+  - [⚠️ Códigos de Status Comuns](#️-códigos-de-status-comuns)
 
-* [Visão Geral](#visão-geral)
-* [Tecnologias Utilizadas](#tecnologias-utilizadas)
-* [Instalação](#instalação)
-* [Executando a Aplicação](#executando-a-aplicação)
-* [Endpoints da API](#endpoints-da-api)
-* [Exemplos de Requisições e Respostas](#exemplos-de-requisições-e-respostas)
+<br>
 
----
 
-## 📖 Visão Geral
+##  Visão Geral
 
 Esta API serve como backend para um sistema nutricional, permitindo o cadastro e gerenciamento de profissionais de nutrição, pacientes, alimentos e planos alimentares.
 
----
 
-## 🧰 Tecnologias Utilizadas
+
+## Tecnologias Utilizadas
 
 * Python 3.11+
 * Flask
@@ -28,9 +34,8 @@ Esta API serve como backend para um sistema nutricional, permitindo o cadastro e
 * python-dotenv
 * JWT (Json Web Token)
 
----
 
-## 💾 Instalação
+## Instalação
 
 1. Clone o repositório:
 
@@ -62,9 +67,8 @@ MYSQL_PASSWORD=
 MYSQL_DB=
 ```
 
----
 
-## 🚀 Executando a Aplicação
+## Executando a Aplicação
 
 ```bash
 python app.py
@@ -72,27 +76,42 @@ python app.py
 
 A aplicação será iniciada em `http://localhost:5000/`
 
----
+<br>
 
-## 📡 Endpoints da API
+# 📡 Endpoints da API
 
-### 👤 Profissionais
 
-* `POST /register`: Criação de um novo profissional
-* `POST /professional`: Login de profissional
 
-### 🧑 Pacientes
 
-* `POST /register/patient`: Cadastro de paciente
-* `GET /patients`: Lista todos os pacientes (auth JWT)
-* `GET /patients/<id>`: Detalhes de um paciente (auth JWT)
 
-### 🍽️ Planos Alimentares
 
-* `POST /meal-plans`: Criação de plano alimentar
-* `GET /meal-plans/<patient_id>`: Listagem por paciente
 
----
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ## 📬 Exemplos de Requisições e Respostas
 
