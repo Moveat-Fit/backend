@@ -8,8 +8,7 @@ from .resources.user import (ProfessionalRegistration, ProfessionalLogin,
                              PatientList, PatientDetails,
                              DeletePatient, UpdatePatient,
                              CreateMealPlan, GetMealPlan,
-                             UpdateMealPlan, DeleteMealPlan,
-                             ListPatientMealPlans, FoodList)
+                             UpdateMealPlan, DeleteMealPlan, FoodList)
 
 from .resources.protected import ProtectedResource
 from .resources.public import PublicResource

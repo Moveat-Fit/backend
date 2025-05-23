@@ -1,6 +1,7 @@
 from flask_restful import Resource
 from flask import request, jsonify
 import re
+import json
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, get_jwt
 from app.utils.db import execute_query
@@ -487,12 +488,21 @@ class MealPlanUpdate(BaseModel):
 class CreateMealPlan(Resource):
     @jwt_required()
     def post(self):
+
+        # verificação: nutricionista logado?
         current_user = get_jwt_identity()
         claims = get_jwt()
         if claims.get('role') != 'professional':
             return {'message': 'Acesso não autorizado'}, 403
 
         data = request.get_json()
+
+        # verificação: paciente já possui plano alimentar?
+        patient_id = data.get('patient_id')
+        check_patient_query = "SELECT id FROM tb_patient_meal_plans WHERE patient_id = %s"
+        existing_plan = execute_query(check_patient_query, (patient_id,))
+        if existing_plan:
+            return {'message': 'Este paciente já possui um plano alimentar cadastrado'}, 409
 
         field_names = {
             'patient_id': 'Paciente',
@@ -512,7 +522,7 @@ class CreateMealPlan(Resource):
             'preparation_notes': 'Modo de preparo'
         }
 
-        # validações manuais
+        # validações de campos
 
         required_fields = ['patient_id', 'plan_name', 'start_date', 'end_date', 'goals', 'entries']
         for field in required_fields:
@@ -866,63 +876,46 @@ class DeleteMealPlan(Resource):
 #             logger.error(f"Erro ao listar planos alimentares: {str(e)}", exc_info=True)
 #             return {'message': f'Erro ao listar planos alimentares: {str(e)}'}, 500 
 
-
-class FoodList(Resource):
+class FoodList(Resource): ## AJUSTAR DEPOIS DO BANCO
     @jwt_required()
     def get(self):
         try:
-            # Verificar se o usuário está autenticado (profissional ou paciente)
             current_user = get_jwt_identity()
             claims = get_jwt()
 
-            # Consulta para obter todos os alimentos com seus grupos e nutrientes
             query = """
-                    SELECT f.id, 
-                           f.name, 
-                           f.default_portion_description, 
-                           f.default_portion_grams, 
-                           fg.name as food_group, 
-                           GROUP_CONCAT( 
-                                   CONCAT( 
-                                           n.name, ' (', \
-                                           ROUND(fn.amount_per_100_unit, 1), ' ', 
-                                           n.unit, ')' 
-                                   ) SEPARATOR ', ' 
-                           )       as nutrients_summary, 
-                           JSON_ARRAYAGG( 
-                                   JSON_OBJECT( 
-                                           'nutrient_id', n.id, 
-                                           'nutrient_name', n.name, 
-                                           'unit', n.unit, 
-                                           'amount_per_100_unit', ROUND(fn.amount_per_100_unit, 1) 
-                                   ) 
-                           )       as nutrients_detail
-                    FROM tb_foods f
-                             LEFT JOIN tb_food_groups fg ON f.food_group_id = fg.id
-                             LEFT JOIN tb_food_nutrients fn ON f.id = fn.food_id
-                             LEFT JOIN tb_nutrients n ON fn.nutrient_id = n.id
-                    GROUP BY f.id
-                    ORDER BY f.name 
-                    """
+                SELECT 
+                    f.id,
+                    f.name,
+                    fg.name as food_group,
+                    f.default_portion_grams,
+                    -- Busca o valor energético (kcal) do alimento
+                    MAX(CASE WHEN n.name IN ('Valor Energético', 'Energia', 'Calorias', 'Kcal') THEN fn.amount_per_100_unit END) as kcal
+                FROM tb_foods f
+                LEFT JOIN tb_food_groups fg ON f.food_group_id = fg.id
+                LEFT JOIN tb_food_nutrients fn ON f.id = fn.food_id
+                LEFT JOIN tb_nutrients n ON fn.nutrient_id = n.id
+                GROUP BY f.id, f.name, fg.name, f.default_portion_grams
+                ORDER BY f.id ASC
+            """
 
             foods = execute_query(query)
 
-            formatted_foods = []
+            result = []
             for food in foods:
-                formatted_food = {
-                    'id': food['id'],
-                    'name': food['name'],
-                    'food_group': food['food_group'],
-                    'default_portion': {
-                        'description': food['default_portion_description'],
-                        'grams': float(food['default_portion_grams']) if food['default_portion_grams'] else None
-                    },
-                    'nutrients_summary': food['nutrients_summary'],
-                    'nutrients_detail': food['nutrients_detail'] if food['nutrients_detail'] else []
+                default_portion = {
+                    "grams": float(food['default_portion_grams']) if food['default_portion_grams'] is not None else None,
+                    "energy_value_kcal": float(food['kcal']) if food['kcal'] is not None else None
                 }
-                formatted_foods.append(formatted_food)
+                formatted_food = {
+                    "id": food['id'],
+                    "name": food['name'],
+                    "food_group": food['food_group'],
+                    "default_portion": default_portion
+                }
+                result.append(formatted_food)
 
-            return {'foods': formatted_foods}, 200
+            return result, 200
 
         except Exception as e:
             logger.error(f"Erro ao listar alimentos: {str(e)}", exc_info=True)
