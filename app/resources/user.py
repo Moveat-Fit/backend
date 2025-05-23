@@ -819,52 +819,52 @@ class DeleteMealPlan(Resource):
             return {'message': f'Erro ao deletar plano alimentar: {str(e)}'}, 500
 
 
-class ListPatientMealPlans(Resource):
-    @jwt_required()
-    def get(self, patient_id):
-        try:
-            current_user = get_jwt_identity()
-            claims = get_jwt()
+# class ListPatientMealPlans(Resource):
+#     @jwt_required()
+#     def get(self, patient_id):
+#         try:
+#             current_user = get_jwt_identity()
+#             claims = get_jwt()
 
-            if claims.get('role') == 'professional':
-                check_patient_query = """
-                    SELECT id FROM tb_patients
-                    WHERE id = %s AND professional_id = %s
-                """
-                patient = execute_query(check_patient_query, (patient_id, current_user))
+#             if claims.get('role') == 'professional':
+#                 check_patient_query = """
+#                     SELECT id FROM tb_patients
+#                     WHERE id = %s AND professional_id = %s
+#                 """
+#                 patient = execute_query(check_patient_query, (patient_id, current_user))
                 
-            elif claims.get('role') == 'patient':
-                check_patient_query = """
-                    SELECT id FROM tb_patients
-                    WHERE id = %s AND id = %s
-                """
-                patient = execute_query(check_patient_query, (patient_id, current_user))
-            else:
-                return {'message': 'Acesso não autorizado'}, 403
+#             elif claims.get('role') == 'patient':
+#                 check_patient_query = """
+#                     SELECT id FROM tb_patients
+#                     WHERE id = %s AND id = %s
+#                 """
+#                 patient = execute_query(check_patient_query, (patient_id, current_user))
+#             else:
+#                 return {'message': 'Acesso não autorizado'}, 403
 
-            if not patient:
-                return {'message': 'Paciente não encontrado ou acesso não autorizado'}, 404
+#             if not patient:
+#                 return {'message': 'Paciente não encontrado ou acesso não autorizado'}, 404
 
-            # Listar todos os planos do paciente
-            plans_query = """
-                SELECT id, \
-                       plan_name, \
-                       DATE_FORMAT(start_date, '%%Y-%%m-%%d')             as start_date, \
-                       DATE_FORMAT(end_date, '%%Y-%%m-%%d')               as end_date, \
-                       goals, \
-                       DATE_FORMAT(created_at, '%%Y-%%m-%%d %%H:%%i:%%s') as created_at, \
-                       DATE_FORMAT(updated_at, '%%Y-%%m-%%d %%H:%%i:%%s') as updated_at
-                FROM tb_patient_meal_plans
-                WHERE patient_id = %s
-                ORDER BY start_date DESC \
-            """
-            plans = execute_query(plans_query, (patient_id,))
+#             # Listar todos os planos do paciente
+#             plans_query = """
+#                 SELECT id, \
+#                        plan_name, \
+#                        DATE_FORMAT(start_date, '%%Y-%%m-%%d')             as start_date, \
+#                        DATE_FORMAT(end_date, '%%Y-%%m-%%d')               as end_date, \
+#                        goals, \
+#                        DATE_FORMAT(created_at, '%%Y-%%m-%%d %%H:%%i:%%s') as created_at, \
+#                        DATE_FORMAT(updated_at, '%%Y-%%m-%%d %%H:%%i:%%s') as updated_at
+#                 FROM tb_patient_meal_plans
+#                 WHERE patient_id = %s
+#                 ORDER BY start_date DESC \
+#             """
+#             plans = execute_query(plans_query, (patient_id,))
 
-            return {'meal_plans': plans}, 200
+#             return {'meal_plans': plans}, 200
 
-        except Exception as e:
-            logger.error(f"Erro ao listar planos alimentares: {str(e)}", exc_info=True)
-            return {'message': f'Erro ao listar planos alimentares: {str(e)}'}, 500
+#         except Exception as e:
+#             logger.error(f"Erro ao listar planos alimentares: {str(e)}", exc_info=True)
+#             return {'message': f'Erro ao listar planos alimentares: {str(e)}'}, 500 
 
 
 class FoodList(Resource):

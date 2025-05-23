@@ -38,7 +38,7 @@ def create_app():
     api.add_resource(GetMealPlan, '/api/meal-plans/<int:meal_plan_id>')
     api.add_resource(UpdateMealPlan, '/api/meal-plans/<int:meal_plan_id>')
     api.add_resource(DeleteMealPlan, '/api/meal-plans/<int:meal_plan_id>')
-    api.add_resource(ListPatientMealPlans, '/api/patients/<int:patient_id>/meal-plans')
+    # api.add_resource(ListPatientMealPlans, '/api/patients/<int:patient_id>/meal-plans')
     api.add_resource(FoodList, '/api/foods')
 
     # Tratamento de erros
