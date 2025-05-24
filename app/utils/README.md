@@ -6,9 +6,9 @@ O script schema.py tem como principais responsabilidades:
 
 * Conectar-se ao servidor MySQL utilizando as credenciais fornecidas no arquivo de ambiente .env.
 * Criar a estrutura completa das tabelas necessárias para o funcionamento da aplicação Moveat, caso elas ainda não existam no banco de dados.
-* Popular tabelas essenciais com um conjunto de dados iniciais. Isso inclui categorias como grupos alimentares, uma lista de nutrientes padrão, e um catálogo base de alimentos comuns com suas respectivas informações nutricionais.
+* Popular a tabela `tb_foods` com um conjunto de dados iniciais, incluindo um catálogo base de alimentos comuns com suas respectivas informações de grupo alimentar, porção padrão e valor energético para essa porção.
   
-__Importante:__ Para garantir que o esquema do banco de dados seja criado exatamente conforme a versão mais recente do schema.py, é recomendado executar o script em um banco de dados limpo ou recém-criado.
+__Importante:__ Para garantir que o esquema do banco de dados seja criado exatamente conforme a versão mais recente do schema.py, é fundamental executar o script. O script foi projetado para remover e recriar tabelas.
 
 ## Descrição das Tabelas
 
@@ -44,34 +44,15 @@ Armazena informações sobre os pacientes vinculados aos profissionais.
 * `created_at`: Data e hora de criação do registro.
 * `updated_at`: Data e hora da última atualização do registro.
 
-### `tb_food_groups`
-Tabela de lookup para categorizar os alimentos (ex: Cereais, Frutas, Vegetais).
-
-* `id`: Identificador único do grupo alimentar (Chave Primária, Auto Incremento).
-* `name`: Nome do grupo alimentar (único).
-
-### `tb_nutrients`
-Tabela de lookup para os diferentes tipos de nutrientes (ex: Valor Energético, Proteína Total).
-
-* `id`: Identificador único do nutriente (Chave Primária, Auto Incremento).
-* `name`: Nome do nutriente (único).
-* `unit`: Unidade de medida do nutriente (ex: kcal, g).
-
 ### `tb_foods`
 Armazena informações detalhadas sobre cada alimento.
 
 * `id`: Identificador único do alimento (Chave Primária, Auto Incremento).
 * `name`: Nome do alimento (único).
-* `food_group_id`: Identificador do grupo alimentar ao qual o alimento pertence (Chave Estrangeira para `tb_food_groups.id`). Se o grupo for deletado, este campo se torna NULO.
+* `food_group_name`: Nome do grupo alimentar ao qual o alimento pertence (ex: 'Cereais', 'Frutas').
 * `default_portion_description`: Descrição da porção padrão do alimento (ex: '1 fatia média').
 * `default_portion_grams`: Peso da porção padrão em gramas.
-
-### `tb_food_nutrients`
-Tabela de junção que relaciona alimentos aos seus nutrientes, especificando a quantidade de cada nutriente por 100 unidades (gramas ou ml) do alimento.
-
-* `food_id`: Identificador do alimento (Parte da Chave Primária Composta, Chave Estrangeira para `tb_foods.id`). Se o alimento for deletado, as entradas correspondentes aqui são deletadas em cascata.
-* `nutrient_id`: Identificador do nutriente (Parte da Chave Primária Composta, Chave Estrangeira para `tb_nutrients.id`). A deleção de um nutriente é restrita se ele estiver em uso aqui.
-* `amount_per_100_unit`: Quantidade do nutriente presente em 100 unidades (g/ml) do alimento.
+* `energy_value_kcal`: Valor energético (em kcal) referente à default_portion_grams do alimento.
 
 ### `tb_patient_meal_plans`
 Armazena os planos alimentares criados para os pacientes.
@@ -112,21 +93,16 @@ Tabela de junção que detalha os alimentos específicos e suas quantidades pres
 
 ## Relacionamentos Principais
 
-* **Profissional e Pacientes**: Um profissional (`tb_professionals`) pode ter vários pacientes (`tb_patients`), mas um paciente está associado a apenas um profissional.
+* **Profissional e Pacientes**: Um profissional (tb_professionals) pode ter vários pacientes (tb_patients), mas um paciente está associado a apenas um profissional.
     * `tb_patients.professional_id` -> `tb_professionals.id`
-* **Alimentos e Grupos Alimentares**: Um alimento (`tb_foods`) pertence a um grupo alimentar (`tb_food_groups`). Um grupo pode conter vários alimentos.
-    * `tb_foods.food_group_id` -> `tb_food_groups.id`
-* **Alimentos e Nutrientes**: Um alimento (`tb_foods`) pode ter vários nutrientes (`tb_nutrients`), e um nutriente pode estar presente em vários alimentos. Esta relação muitos-para-muitos é implementada pela tabela `tb_food_nutrients`.
-    * `tb_food_nutrients.food_id` -> `tb_foods.id`
-    * `tb_food_nutrients.nutrient_id` -> `tb_nutrients.id`
-* **Planos Alimentares, Pacientes e Profissionais**: Um plano alimentar (`tb_patient_meal_plans`) é criado por um profissional (`tb_professionals`) para um paciente (`tb_patients`).
+* **Planos Alimentares, Pacientes e Profissionais**: Um plano alimentar (tb_patient_meal_plans) é criado por um profissional (tb_professionals) para um paciente (tb_patients).
     * `tb_patient_meal_plans.patient_id` -> `tb_patients.id`
     * `tb_patient_meal_plans.professional_id` -> `tb_professionals.id`
-* **Entradas de Plano Alimentar e Planos**: Um plano alimentar (`tb_patient_meal_plans`) consiste em várias entradas de refeição (`tb_meal_plan_entries`).
+* **Entradas de Plano Alimentar e Planos**: Um plano alimentar (tb_patient_meal_plans) consiste em várias entradas de refeição (tb_meal_plan_entries).
     * `tb_meal_plan_entries.meal_plan_id` -> `tb_patient_meal_plans.id`
-* **Alimentos em Entradas de Plano, Entradas de Plano e Alimentos**: Cada entrada de refeição (`tb_meal_plan_entries`) pode conter vários alimentos (`tb_foods`), com quantidades específicas definidas em `tb_meal_plan_foods`.
+* **Alimentos em Entradas de Plano, Entradas de Plano e Alimentos**: Cada entrada de refeição (`tb_meal_plan_entries`) pode conter vários alimentos (`tb_foods`), com quantidades específicas definidas em      `tb_meal_plan_foods`.
     * `tb_meal_plan_foods.meal_plan_entry_id` -> `tb_meal_plan_entries.id`
-    * `tb_meal_plan_foods.food_id` -> `tb_foods.id`
+    * `tb_meal_plan_foods.food_id`-> `tb_foods.id`
 
     ## Diagrama Entidade-Relacionamento (DER) - DBML
 
@@ -180,37 +156,14 @@ Table tb_patients {
   note: 'Pacientes cadastrados e vinculados a profissionais.'
 }
 
-Table tb_food_groups {
-  id int [pk, increment, note: 'ID do grupo alimentar']
-  name varchar(100) [unique, not null, note: 'Nome do grupo (ex: Cereais, Frutas)']
-  note: 'Categorias para os alimentos.'
-}
-
-Table tb_nutrients {
-  id int [pk, increment, note: 'ID do nutriente']
-  name varchar(100) [unique, not null, note: 'Nome do nutriente (ex: Valor Energético)']
-  unit varchar(20) [not null, note: 'Unidade de medida (ex: kcal, g)']
-  note: 'Tipos de nutrientes e suas unidades.'
-}
-
 Table tb_foods {
   id int [pk, increment, note: 'ID do alimento']
   name varchar(255) [unique, not null, note: 'Nome do alimento']
-  food_group_id int [note: 'ID do grupo alimentar']
+  food_group_name varchar(100) [note: 'Nome do grupo alimentar (ex: Cereais, Frutas)']
   default_portion_description varchar(255) [note: 'Descrição da porção padrão (ex: 1 xícara)']
   default_portion_grams decimal(7,2) [note: 'Peso em gramas da porção padrão']
-  note: 'Catálogo de alimentos.'
-}
-
-Table tb_food_nutrients {
-  food_id int [not null, note: 'ID do alimento (FK)']
-  nutrient_id int [not null, note: 'ID do nutriente (FK)']
-  amount_per_100_unit decimal(10,3) [not null, note: 'Quantidade do nutriente por 100g/ml do alimento']
-
-  Indexes {
-    (food_id, nutrient_id) [pk] // Chave primária composta
-  }
-  note: 'Composição nutricional dos alimentos.'
+  energy_value_kcal decimal(7,2) [note: 'Valor energético (kcal) para a porção padrão (default_portion_grams)']
+  note: 'Catálogo de alimentos com informação nutricional básica (valor energético da porção padrão).'
 }
 
 Table tb_patient_meal_plans {
@@ -257,11 +210,6 @@ Table tb_meal_plan_foods {
 // --- RELACIONAMENTOS ---
 
 Ref: tb_patients.professional_id > tb_professionals.id [delete: restrict]
-
-Ref: tb_foods.food_group_id > tb_food_groups.id [delete: set null]
-
-Ref: tb_food_nutrients.food_id > tb_foods.id [delete: cascade]
-Ref: tb_food_nutrients.nutrient_id > tb_nutrients.id [delete: restrict]
 
 Ref: tb_patient_meal_plans.patient_id > tb_patients.id [delete: cascade]
 Ref: tb_patient_meal_plans.professional_id > tb_professionals.id [delete: restrict]
