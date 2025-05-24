@@ -93,12 +93,12 @@ Tabela de junção que detalha os alimentos específicos e suas quantidades pres
 
 ## Relacionamentos Principais
 
-* **Profissional e Pacientes**: Um profissional (tb_professionals) pode ter vários pacientes (tb_patients), mas um paciente está associado a apenas um profissional.
+* **Profissional e Pacientes**: Um profissional (`tb_professionals`) pode ter vários pacientes (`tb_patients`), mas um paciente está associado a apenas um profissional.
     * `tb_patients.professional_id` -> `tb_professionals.id`
-* **Planos Alimentares, Pacientes e Profissionais**: Um plano alimentar (tb_patient_meal_plans) é criado por um profissional (tb_professionals) para um paciente (tb_patients).
+* **Planos Alimentares, Pacientes e Profissionais**: Um plano alimentar (`tb_patient_meal_plans`) é criado por um profissional (`tb_professionals`) para um paciente (`tb_patients`).
     * `tb_patient_meal_plans.patient_id` -> `tb_patients.id`
     * `tb_patient_meal_plans.professional_id` -> `tb_professionals.id`
-* **Entradas de Plano Alimentar e Planos**: Um plano alimentar (tb_patient_meal_plans) consiste em várias entradas de refeição (tb_meal_plan_entries).
+* **Entradas de Plano Alimentar e Planos**: Um plano alimentar (`tb_patient_meal_plans`) consiste em várias entradas de refeição (`tb_meal_plan_entries`).
     * `tb_meal_plan_entries.meal_plan_id` -> `tb_patient_meal_plans.id`
 * **Alimentos em Entradas de Plano, Entradas de Plano e Alimentos**: Cada entrada de refeição (`tb_meal_plan_entries`) pode conter vários alimentos (`tb_foods`), com quantidades específicas definidas em      `tb_meal_plan_foods`.
     * `tb_meal_plan_foods.meal_plan_entry_id` -> `tb_meal_plan_entries.id`
