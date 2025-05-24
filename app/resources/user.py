@@ -661,29 +661,26 @@ class CreateMealPlan(Resource):
 
 class GetMealPlan(Resource):
     @jwt_required()
-    def get(self, meal_plan_id):
+    def get(self, patient_id):
         try:
             current_user = get_jwt_identity()
             claims = get_jwt()
 
-            # Verificar se o plano pertence ao profissional ou paciente
-            check_plan_query = """
-                SELECT pmp.id, pmp.patient_id, pmp.professional_id
-                FROM tb_patient_meal_plans pmp
-                JOIN tb_patients p ON pmp.patient_id = p.id
-                WHERE pmp.id = %s AND 
-                      (pmp.professional_id = %s OR 
-                       (%s = 'patient' AND p.id = %s))
+            check_patient_query = """
+                SELECT p.id, p.professional_id
+                FROM tb_patients p
+                WHERE p.id = %s
             """
-            plan = execute_query(
-                check_plan_query,
-                (meal_plan_id, current_user, claims.get('role'), current_user)
-            )
+            patient = execute_query(check_patient_query, (patient_id,))
+            if not patient:
+                return {'message': 'Paciente não encontrado'}, 404
 
-            if not plan:
-                return {'message': 'Plano alimentar não encontrado ou acesso não autorizado'}, 404
+            if claims.get('role') == 'professional' and patient[0]['professional_id'] != int(current_user):
+                return {'message': 'Acesso não autorizado'}, 403
+            if claims.get('role') == 'patient' and int(current_user) != int(patient_id):
+                return {'message': 'Acesso não autorizado'}, 403
 
-            # Obter informações básicas do plano
+
             plan_query = """
                 SELECT 
                     id, patient_id, professional_id, plan_name,
@@ -693,11 +690,16 @@ class GetMealPlan(Resource):
                     DATE_FORMAT(created_at, '%%Y-%%m-%%d %%H:%%i:%%s') as created_at,
                     DATE_FORMAT(updated_at, '%%Y-%%m-%%d %%H:%%i:%%s') as updated_at
                 FROM tb_patient_meal_plans
-                WHERE id = %s
+                WHERE patient_id = %s
+                LIMIT 1
             """
-            plan_info = execute_query(plan_query, (meal_plan_id,))[0]
+            plan_result = execute_query(plan_query, (patient_id,))
+            if not plan_result:
+                return {'message': 'Plano alimentar não encontrado para este paciente'}, 404
 
-            # Obter todas as entradas do plano
+            plan_info = plan_result[0]
+
+            # busca todas as entradas do plano
             entries_query = """
                 SELECT 
                     mpe.id, 
@@ -709,9 +711,9 @@ class GetMealPlan(Resource):
                 WHERE mpe.meal_plan_id = %s
                 ORDER BY mpe.day_of_plan, mpe.time_scheduled
             """
-            entries = execute_query(entries_query, (meal_plan_id,))
+            entries = execute_query(entries_query, (plan_info['id'],))
 
-            # Para cada entrada, obter os alimentos
+            # para cada entrada, busca os alimentos
             for entry in entries:
                 foods_query = """
                     SELECT 

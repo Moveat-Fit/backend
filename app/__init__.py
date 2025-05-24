@@ -34,7 +34,7 @@ def create_app():
     # api.add_resource(UpdatePatient, '/patient/<int:id>/update')
     api.add_resource(UpdatePatient, '/register/patient/<int:id>')
     api.add_resource(CreateMealPlan, '/api/meal-plans')
-    api.add_resource(GetMealPlan, '/api/meal-plans/<int:meal_plan_id>')
+    api.add_resource(GetMealPlan, '/api/meal-plans/<int:patient_id>')
     api.add_resource(UpdateMealPlan, '/api/meal-plans/<int:meal_plan_id>')
     api.add_resource(DeleteMealPlan, '/api/meal-plans/<int:meal_plan_id>')
     # api.add_resource(ListPatientMealPlans, '/api/patients/<int:patient_id>/meal-plans')
