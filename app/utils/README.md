@@ -6,7 +6,7 @@ O script schema.py tem como principais responsabilidades:
 
 * Conectar-se ao servidor MySQL utilizando as credenciais fornecidas no arquivo de ambiente .env.
 * Criar a estrutura completa das tabelas necessárias para o funcionamento da aplicação Moveat, caso elas ainda não existam no banco de dados.
-* Popular a tabela `tb_foods` com um conjunto de dados iniciais, incluindo um catálogo base de alimentos comuns com suas respectivas informações de grupo alimentar, porção padrão e valor energético para essa porção.
+* Popular a tabela `tb_foods` com um conjunto de dados iniciais, incluindo um catálogo base de alimentos comuns com suas respectivas informações de nome do grupo alimentar, detalhes da porção padrão (peso em gramas, quantidade da unidade, nome da unidade) e o valor energético para essa porção."
   
 __Importante:__ Para garantir que o esquema do banco de dados seja criado exatamente conforme a versão mais recente do schema.py, é fundamental executar o script. O script foi projetado para remover e recriar tabelas.
 
@@ -50,9 +50,10 @@ Armazena informações detalhadas sobre cada alimento.
 * `id`: Identificador único do alimento (Chave Primária, Auto Incremento).
 * `name`: Nome do alimento (único).
 * `food_group_name`: Nome do grupo alimentar ao qual o alimento pertence (ex: 'Cereais', 'Frutas').
-* `default_portion_description`: Descrição da porção padrão do alimento (ex: '1 fatia média').
 * `default_portion_grams`: Peso da porção padrão em gramas.
 * `energy_value_kcal`: Valor energético (em kcal) referente à default_portion_grams do alimento.
+* `unit_measure`: Quantidade numérica da unidade de medida padrão (ex: 1 para "1 unidade", 100 para "100g").
+* `portion`: Nome da unidade de medida padrão (ex: "unidade", "fatia", "gramas").
 
 ### `tb_patient_meal_plans`
 Armazena os planos alimentares criados para os pacientes.
@@ -85,22 +86,28 @@ Tabela de junção que detalha os alimentos específicos e suas quantidades pres
 * `id`: Identificador único do alimento no plano (Chave Primária, Auto Incremento).
 * `meal_plan_entry_id`: Identificador da entrada do plano de refeição à qual este alimento pertence (Chave Estrangeira para `tb_meal_plan_entries.id`). Se a entrada do plano for deletada, os alimentos associados são deletados em cascata.
 * `food_id`: Identificador do alimento (Chave Estrangeira para `tb_foods.id`). A deleção de um alimento é restrita se ele estiver em uso aqui.
+* `prescribed_portion`: Quantidade da unidade de medida prescrita pelo nutricionista (ex: 2 para "2 fatias").
+* `prescribed_unit_measure`:  Nome da unidade de medida prescrita (ex: "fatias", "gramas", "unidade").
 * `prescribed_quantity_grams`: Quantidade prescrita do alimento em gramas.
-* `display_portion`: Descrição da porção para exibição (ex: '1 concha média', '2 unidades').
 * `preparation_notes`: Notas sobre o preparo do alimento.
 * `created_at`: Data e hora de criação do registro.
 * `updated_at`: Data e hora da última atualização do registro.
 
 ## Relacionamentos Principais
 
+A seguir são descritos os principais relacionamentos de chave estrangeira entre as tabelas do sistema:
+
 * **Profissional e Pacientes**: Um profissional (`tb_professionals`) pode ter vários pacientes (`tb_patients`), mas um paciente está associado a apenas um profissional.
     * `tb_patients.professional_id` -> `tb_professionals.id`
+
 * **Planos Alimentares, Pacientes e Profissionais**: Um plano alimentar (`tb_patient_meal_plans`) é criado por um profissional (`tb_professionals`) para um paciente (`tb_patients`).
     * `tb_patient_meal_plans.patient_id` -> `tb_patients.id`
     * `tb_patient_meal_plans.professional_id` -> `tb_professionals.id`
+
 * **Entradas de Plano Alimentar e Planos**: Um plano alimentar (`tb_patient_meal_plans`) consiste em várias entradas de refeição (`tb_meal_plan_entries`).
     * `tb_meal_plan_entries.meal_plan_id` -> `tb_patient_meal_plans.id`
-* **Alimentos em Entradas de Plano, Entradas de Plano e Alimentos**: Cada entrada de refeição (`tb_meal_plan_entries`) pode conter vários alimentos (`tb_foods`), com quantidades específicas definidas em      `tb_meal_plan_foods`.
+
+* **Alimentos Prescritos em Refeições**: Cada entrada de refeição (`tb_meal_plan_entries`) pode conter vários alimentos do catálogo (`tb_foods`), com quantidades e unidades específicas definidas na tabela de junção `tb_meal_plan_foods`.
     * `tb_meal_plan_foods.meal_plan_entry_id` -> `tb_meal_plan_entries.id`
     * `tb_meal_plan_foods.food_id`-> `tb_foods.id`
 
@@ -148,7 +155,7 @@ Table tb_patients {
   phone varchar(15) [not null, note: 'Telefone. CHECK: CHAR_LENGTH(TRIM(phone)) >= 10']
   cpf char(11) [unique, not null, note: 'CPF único']
   weight decimal(5,2) [not null, note: 'Peso do paciente']
-  height decimal(3,2) [not null, note: 'Altura do paciente']
+  height decimal(3,2) [not null, note: 'Altura do paciente (ex: em metros)']
   note text [note: 'Observações adicionais sobre o paciente']
   professional_id int [not null, note: 'ID do profissional responsável']
   created_at timestamp [default: `CURRENT_TIMESTAMP`, note: 'Data de criação']
@@ -157,13 +164,14 @@ Table tb_patients {
 }
 
 Table tb_foods {
-  id int [pk, increment, note: 'ID do alimento']
+  id int [pk, increment, note: 'ID do alimento de catálogo']
   name varchar(255) [unique, not null, note: 'Nome do alimento']
   food_group_name varchar(100) [note: 'Nome do grupo alimentar (ex: Cereais, Frutas)']
-  default_portion_description varchar(255) [note: 'Descrição da porção padrão (ex: 1 xícara)']
-  default_portion_grams decimal(7,2) [note: 'Peso em gramas da porção padrão']
-  energy_value_kcal decimal(7,2) [note: 'Valor energético (kcal) para a porção padrão (default_portion_grams)']
-  note: 'Catálogo de alimentos com informação nutricional básica (valor energético da porção padrão).'
+  default_portion_grams decimal(7,2) [null, note: 'Peso em gramas da porção padrão do alimento']
+  energy_value_kcal decimal(7,2) [null, note: 'Kcal para default_portion_grams']
+  unit_measure decimal(7,2) [null, note: 'Quantidade numérica da unidade de medida padrão (ex: 1 para 1 unidade)']
+  portion varchar(50) [null, note: 'Nome da unidade de medida padrão (ex: unidade, fatia, g)']
+  note: 'Catálogo de alimentos com informação da porção padrão e seu valor energético.'
 }
 
 Table tb_patient_meal_plans {
@@ -198,13 +206,14 @@ Table tb_meal_plan_entries {
 Table tb_meal_plan_foods {
   id int [pk, increment, note: 'ID do alimento na refeição do plano']
   meal_plan_entry_id int [not null, note: 'ID da entrada da refeição']
-  food_id int [not null, note: 'ID do alimento']
-  prescribed_quantity_grams decimal(7,2) [not null, note: 'Quantidade prescrita em gramas']
-  display_portion varchar(100) [note: 'Descrição da porção para exibição (ex: 1 unidade)']
+  food_id int [not null, note: 'ID do alimento (referencia tb_foods)']
+  prescribed_portion decimal(7,2) [not null, note: 'Quantidade da unidade prescrita (ex: 2 para 2 fatias)']
+  prescribed_unit_measure varchar(50) [not null, note: 'Nome da unidade prescrita (ex: fatias, g)']
+  prescribed_quantity_grams decimal(7,2) [not null, note: 'Total em gramas da porção prescrita (calculado pelo backend)']
   preparation_notes text [note: 'Notas de preparo']
   created_at timestamp [default: `CURRENT_TIMESTAMP`, note: 'Data de criação']
   updated_at timestamp [default: `CURRENT_TIMESTAMP`, note: 'Data da última atualização (MySQL: ON UPDATE CURRENT_TIMESTAMP)']
-  note: 'Alimentos específicos e suas quantidades em cada refeição do plano.'
+  note: 'Alimentos específicos, quantidades e unidades prescritas em cada refeição do plano.'
 }
 
 // --- RELACIONAMENTOS ---
