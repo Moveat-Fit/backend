@@ -52,8 +52,8 @@ Armazena informações detalhadas sobre cada alimento.
 * `food_group_name`: Nome do grupo alimentar ao qual o alimento pertence (ex: 'Cereais', 'Frutas').
 * `default_portion_grams`: Peso da porção padrão em gramas.
 * `energy_value_kcal`: Valor energético (em kcal) referente à default_portion_grams do alimento.
-* `unit_measure`: Quantidade numérica da unidade de medida padrão (ex: 1 para "1 unidade", 100 para "100g").
-* `portion`: Nome da unidade de medida padrão (ex: "unidade", "fatia", "gramas").
+* `portion`: Quantidade numérica da unidade de medida caseira padrão (ex: 1.0, 2.0, 0.5).
+* `unit_measure`: Nome da unidade de medida caseira padrão (ex: "unidade", "fatia", "colher de sopa cheia", "filé médio").
 
 ### `tb_patient_meal_plans`
 Armazena os planos alimentares criados para os pacientes.
@@ -86,8 +86,8 @@ Tabela de junção que detalha os alimentos específicos e suas quantidades pres
 * `id`: Identificador único do alimento no plano (Chave Primária, Auto Incremento).
 * `meal_plan_entry_id`: Identificador da entrada do plano de refeição à qual este alimento pertence (Chave Estrangeira para `tb_meal_plan_entries.id`). Se a entrada do plano for deletada, os alimentos associados são deletados em cascata.
 * `food_id`: Identificador do alimento (Chave Estrangeira para `tb_foods.id`). A deleção de um alimento é restrita se ele estiver em uso aqui.
-* `prescribed_portion`: Quantidade da unidade de medida prescrita pelo nutricionista (ex: 2 para "2 fatias").
-* `prescribed_unit_measure`:  Nome da unidade de medida prescrita (ex: "fatias", "gramas", "unidade").
+* `prescribed_portion`: Quantidade numérica da unidade de medida caseira prescrita pelo nutricionista (ex: 2 se foram "2 fatias").
+* `prescribed_unit_measure`:  Nome da unidade de medida caseira prescrita pelo nutricionista (ex: "unidade", "fatia", "colher de sopa cheia", "filé médio").
 * `prescribed_quantity_grams`: Quantidade prescrita do alimento em gramas.
 * `preparation_notes`: Notas sobre o preparo do alimento.
 * `created_at`: Data e hora de criação do registro.
@@ -169,8 +169,8 @@ Table tb_foods {
   food_group_name varchar(100) [note: 'Nome do grupo alimentar (ex: Cereais, Frutas)']
   default_portion_grams decimal(7,2) [null, note: 'Peso em gramas da porção padrão do alimento']
   energy_value_kcal decimal(7,2) [null, note: 'Kcal para default_portion_grams']
-  unit_measure decimal(7,2) [null, note: 'Quantidade numérica da unidade de medida padrão (ex: 1 para 1 unidade)']
-  portion varchar(50) [null, note: 'Nome da unidade de medida padrão (ex: unidade, fatia, g)']
+  portion decimal(7,2) [null, note: 'Quantidade numérica da unidade de medida caseira padrão (ex: 1.0, 2.0, 0.5).']
+  unit_measure varchar(50) [null, note: 'Nome da unidade de medida caseira padrão (ex: "unidade", "fatia", "colher de sopa cheia", "filé médio").'] 
   note: 'Catálogo de alimentos com informação da porção padrão e seu valor energético.'
 }
 
@@ -207,9 +207,9 @@ Table tb_meal_plan_foods {
   id int [pk, increment, note: 'ID do alimento na refeição do plano']
   meal_plan_entry_id int [not null, note: 'ID da entrada da refeição']
   food_id int [not null, note: 'ID do alimento (referencia tb_foods)']
-  prescribed_portion decimal(7,2) [not null, note: 'Quantidade da unidade prescrita (ex: 2 para 2 fatias)']
-  prescribed_unit_measure varchar(50) [not null, note: 'Nome da unidade prescrita (ex: fatias, g)']
-  prescribed_quantity_grams decimal(7,2) [not null, note: 'Total em gramas da porção prescrita (calculado pelo backend)']
+  prescribed_portion decimal(7,2) [not null, note: 'Quantidade numérica da unidade de medida caseira prescrita pelo nutricionista (ex: 2 se foram "2 fatias").']
+  prescribed_unit_measure varchar(50) [not null, note: 'Nome da unidade de medida caseira prescrita pelo nutricionista (ex: "unidade", "fatia", "colher de sopa cheia", "filé médio").']
+  prescribed_quantity_grams decimal(7,2) [not null, note: 'Total em gramas da porção prescrita']
   preparation_notes text [note: 'Notas de preparo']
   created_at timestamp [default: `CURRENT_TIMESTAMP`, note: 'Data de criação']
   updated_at timestamp [default: `CURRENT_TIMESTAMP`, note: 'Data da última atualização (MySQL: ON UPDATE CURRENT_TIMESTAMP)']

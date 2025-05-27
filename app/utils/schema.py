@@ -84,8 +84,8 @@ def create_tables(cnxn):
             food_group_name VARCHAR(100),
             default_portion_grams DECIMAL(7,2) NULL,
             energy_value_kcal DECIMAL(7,2) NULL,
-            unit_measure DECIMAL(7,2) NULL,
-            portion VARCHAR(50) NULL
+            portion DECIMAL(7,2) NULL,
+            unit_measure VARCHAR(50) NULL
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         """,
         """
@@ -164,38 +164,38 @@ def insert_initial_data(cnxn):
         return
 
     foods_data_tuples = [
-        ('Feijão carioca cozido', 'Vegetais', 60.0, 164.0, 60.0, 'gramas'),
-        ('Arroz branco cozido', 'Cereais', 50.0, 177.0, 50.0, 'gramas'),
-        ('Batata inglesa cozida', 'Cereais', 100.0, 51.0, 100.0, 'gramas'),
-        ('Batata doce cozida', 'Cereais', 100.0, 91.0, 100.0, 'gramas'),
-        ('Macarrão cozido', 'Cereais', 80.0, 288.0, 80.0, 'gramas'),
-        ('Pão francês', 'Cereais', 50.0, 140.0, 1.0, 'unidade'),
-        ('Pão de forma tradicional', 'Cereais', 50.0, 127.0, 2.0, 'fatias'),
-        ('Goma de tapioca', 'Cereais', 100.0, 288.0, 100.0, 'gramas'),
-        ('Abóbora cozida', 'Vegetais', 100.0, 26.0, 100.0, 'gramas'),
-        ('Berinjela cozida', 'Vegetais', 100.0, 25.0, 100.0, 'gramas'),
-        ('Cenoura cozida', 'Vegetais', 100.0, 41.0, 100.0, 'gramas'),
-        ('Beterraba cozida', 'Vegetais', 100.0, 43.0, 100.0, 'gramas'),
-        ('Brócolis cozido', 'Vegetais', 100.0, 34.0, 100.0, 'gramas'),
-        ('Melão', 'Frutas', 100.0, 34.0, 1.0, 'fatia'),
-        ('Melancia', 'Frutas', 100.0, 32.0, 1.0, 'fatia'),
-        ('Morango', 'Frutas', 100.0, 32.0, 1.0, 'xícara'),
-        ('Abacaxi', 'Frutas', 100.0, 50.0, 1.0, 'fatia'),
-        ('Kiwi', 'Frutas', 100.0, 61.0, 1.0, 'unidade'),
-        ('Uva', 'Frutas', 100.0, 67.0, 1.0, 'cacho'),
-        ('Ovos de galinha, cozidos', 'Proteínas', 50.0, 80.0, 1.0, 'unidade'), 
-        ('Frango grelhado (peito)', 'Proteínas', 100.0, 165.0, 1.0, 'filé'),
-        ('Patinho bovino, grelhado/moído', 'Proteínas', 100.0, 220.0, 100.0, 'gramas'), 
-        ('Tilápia cozida', 'Proteínas', 100.0, 130.0, 1.0, 'filé'),
-        ('Whey Protein Concentrado (pó)', 'Proteínas', 30.0, 128.0, 1.0, 'scoop'),
-        ('Iogurte desnatado (Zero)', 'Laticínios', 170.0, 44.0, 170.0, 'gramas'), 
-        ('Requeijão cremoso light', 'Laticínios', 30.0, 64.0, 1.0, 'colher de sopa'),
-        ('Margarina com sal', 'Gorduras', 10.0, 72.0, 1.0, 'colher de chá'), 
-        ('Azeite de oliva extra virgem', 'Gorduras', 11.96, 107.0, 1.0, 'colher de sopa'), 
-        ('Pasta de Amendoim integral', 'Gorduras', 15.0, 88.0, 1.0, 'colher de sopa'),
-        ('Castanha do Pará', 'Gorduras', 15.0, 102.0, 4.0, 'unidades'), 
-        ('Doce de leite pastoso', 'Açúcares', 20.0, 70.0, 1.0, 'colher de sopa'),
-        ('Chocolate ao leite', 'Açúcares', 25.0, 135.0, 25.0, 'gramas')
+        ('Feijão carioca cozido', 'Vegetais', 140.0, 98.0, 1.0, 'concha cheia'),
+        ('Arroz branco cozido', 'Cereais', 45.0, 58.0, 1.0, 'colher de arroz cheia'),
+        ('Batata inglesa cozida', 'Cereais', 30.0, 15.0, 1.0, 'colher de sopa cheia'),
+        ('Batata doce cozida', 'Cereais', 42.0, 38.0, 1.0, 'colher de sopa cheia'),
+        ('Macarrão cozido', 'Cereais', 50.0, 63.0, 1.0, 'colher de servir cheia'),
+        ('Pão francês', 'Cereais', 50.0, 150.0, 1.0, 'unidade'),
+        ('Pão de forma tradicional', 'Cereais', 25.0, 65.0, 1.0, 'fatia'),
+        ('Goma de tapioca', 'Cereais', 15.0, 43.0, 1.0, 'colher de sopa rasa'),
+        ('Abóbora cozida', 'Vegetais', 36.0, 18.0, 1.0, 'colher de sopa cheia'),
+        ('Berinjela cozida', 'Vegetais', 75.0, 20.0, 1.0, 'colher de servir cheia'),
+        ('Cenoura cozida (picada)', 'Vegetais', 25.0, 4.0, 1.0, 'colher de sopa cheia'),
+        ('Beterraba cozida', 'Vegetais', 38.0, 17.0, 1.0, 'colher de servir cheia'),
+        ('Brócolis cozido (picado)', 'Vegetais', 15.0, 4.0, 1.0, 'colher de sopa cheia'),
+        ('Melão', 'Frutas', 70.0, 17.0, 1.0, 'fatia pequena'),
+        ('Melancia', 'Frutas', 100.0, 29.0, 1.0, 'fatia pequena'),
+        ('Morango', 'Frutas', 12.0, 4.0, 1.0, 'unidade média'),
+        ('Abacaxi', 'Frutas', 75.0, 37.0, 1.0, 'fatia média'),
+        ('Kiwi', 'Frutas', 76.0, 44.0, 1.0, 'unidade média'),
+        ('Uva', 'Frutas', 350.0, 196.0, 1.0, 'cacho médio'),
+        ('Ovos de galinha, cozidos', 'Proteínas', 50.0, 63.0, 1.0, 'unidade média'),
+        ('Frango grelhado (peito)', 'Proteínas', 100.0, 150.0, 1.0, 'filé médio'),
+        ('Patinho bovino, grelhado/moído', 'Proteínas', 110.0, 231.0, 1.0, 'filé médio'),
+        ('Tilápia cozida', 'Proteínas', 55.0, 59.0, 1.0, 'filé médio'),
+        ('Whey Protein Concentrado (pó)', 'Proteínas', 30.0, 114.0, 1.0, 'scoop'),
+        ('Iogurte desnatado (Zero)', 'Laticínios', 200.0, 127.0, 1.0, 'copo (200ml)'),
+        ('Requeijão cremoso light', 'Laticínios', 30.0, 54.0, 1.0, 'colher de sopa cheia'),
+        ('Margarina com sal', 'Gorduras', 8.0, 43.0, 1.0, 'colher de chá cheia'),
+        ('Azeite de oliva extra virgem', 'Gorduras', 12.0, 71.0, 1.0, 'colher de sopa'),
+        ('Pasta de Amendoim integral', 'Gorduras', 15.0, 93.0, 1.0, 'colher de sopa'),
+        ('Castanha do Pará', 'Gorduras', 4.0, 27.0, 1.0, 'unidade'),
+        ('Doce de leite pastoso', 'Açúcares', 20.0, 64.0, 1.0, 'colher de sopa'),
+        ('Chocolate ao leite', 'Açúcares', 30.0, 161.0, 1.0, 'barra pequena')
     ]
 
     food_values_to_insert = []
@@ -210,7 +210,7 @@ def insert_initial_data(cnxn):
         )
 
     sql_insert_foods = """
-    INSERT IGNORE INTO tb_foods (name, food_group_name, default_portion_grams, energy_value_kcal, unit_measure, portion) 
+    INSERT IGNORE INTO tb_foods (name, food_group_name, default_portion_grams, energy_value_kcal, portion, unit_measure) 
     VALUES (%s, %s, %s, %s, %s, %s)
     """
 
