@@ -616,6 +616,7 @@ class GetMealPlan(Resource):
             current_user = get_jwt_identity()
             claims = get_jwt()
 
+            # Verifica se o paciente existe e obtém o profissional responsável
             check_patient_query = """
                 SELECT p.id, p.professional_id
                 FROM tb_patients p
@@ -625,12 +626,13 @@ class GetMealPlan(Resource):
             if not patient:
                 return {'message': 'Paciente não encontrado'}, 404
 
+            # Permissão: profissional só vê seus pacientes, paciente só vê seu próprio plano
             if claims.get('role') == 'professional' and patient[0]['professional_id'] != int(current_user):
                 return {'message': 'Acesso não autorizado'}, 403
             if claims.get('role') == 'patient' and int(current_user) != int(patient_id):
                 return {'message': 'Acesso não autorizado'}, 403
 
-
+            # Busca o plano alimentar do paciente
             plan_query = """
                 SELECT 
                     id, patient_id, professional_id, plan_name,
@@ -649,7 +651,7 @@ class GetMealPlan(Resource):
 
             plan_info = plan_result[0]
 
-            # busca todas as entradas do plano
+            # Busca todas as entradas do plano alimentar
             entries_query = """
                 SELECT 
                     mpe.id, 
@@ -663,19 +665,30 @@ class GetMealPlan(Resource):
             """
             entries = execute_query(entries_query, (plan_info['id'],))
 
-            # para cada entrada, busca os alimentos
+            # Para cada entrada, busca os alimentos da tb_meal_plan_foods e coloca em foods[]
             for entry in entries:
                 foods_query = """
                     SELECT 
-                        mpf.id, mpf.food_id, f.name as food_name,
-                        mpf.prescribed_quantity_grams,
-                        mpf.display_portion,
-                        mpf.preparation_notes
-                    FROM tb_meal_plan_foods mpf
-                    JOIN tb_foods f ON mpf.food_id = f.id
-                    WHERE mpf.meal_plan_entry_id = %s
+                        id,
+                        food_id,
+                        prescribed_quantity_grams,
+                        prescribed_portion,
+                        prescribed_unit_measure,
+                        preparation_notes
+                    FROM tb_meal_plan_foods
+                    WHERE meal_plan_entry_id = %s
                 """
-                foods = execute_query(foods_query, (entry['id'],))
+                foods_result = execute_query(foods_query, (entry['id'],))
+                foods = []
+                for food in foods_result:
+                    foods.append({
+                        "id": food['id'],
+                        "food_id": food['food_id'],
+                        "prescribed_quantity_grams": float(food['prescribed_quantity_grams']) if food['prescribed_quantity_grams'] is not None else None,
+                        "prescribed_portion": float(food['prescribed_portion']) if food['prescribed_portion'] is not None else None,
+                        "prescribed_unit_measure": food['prescribed_unit_measure'],
+                        "preparation_notes": food['preparation_notes']
+                    })
                 entry['foods'] = foods
 
             plan_info['entries'] = entries

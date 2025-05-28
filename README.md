@@ -5,7 +5,7 @@
   - [Tecnologias Utilizadas](#tecnologias-utilizadas)
   - [Instalação](#instalação)
   - [Executando a Aplicação](#executando-a-aplicação)
-- [📡 Endpoints da API](#-endpoints-da-api)
+- [Endpoints da API](#endpoints-da-api)
   - [Autenticação](#autenticação)
     - [Cadastro de Profissional](#cadastro-de-profissional)
     - [Login de Profissional](#login-de-profissional)
@@ -89,7 +89,7 @@ A aplicação será iniciada em `http://localhost:5000/`
 
 <br>
 
-# 📡 Endpoints da API
+# Endpoints da API
 
 ## Autenticação
 
