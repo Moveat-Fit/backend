@@ -356,7 +356,8 @@ A aplicação será iniciada em `http://localhost:5000/`
   - end_date (string, YYYY-MM-DD)
   - goals (string)
   - entries (lista de refeições)
--   **Request**
+  - foods (lista de alimentos por refeição)
+- **Request**
 ```json
 {
   "patient_id": 1,
@@ -369,13 +370,14 @@ A aplicação será iniciada em `http://localhost:5000/`
       "meal_type_name": "Café da manhã",
       "day_of_plan": "2024-06-01",
       "time_scheduled": "08:00",
-      "notes": "Evitar açúcar",
+      "notes": "Sem açucar",
       "foods": [
         {
-          "food_id": 10,
-          "prescribed_quantity_grams": 50,
-          "display_portion": "1 fatia",
-          "preparation_notes": "Grelhado"
+          "food_name": "Pão francês",
+          "prescribed_quantity": 1.0,
+          "unit_measure": "unidade",
+          "energy_value_kcal": 120,
+          "preparation_notes": "Retirar o miolo"
         }
       ]
     }
@@ -393,7 +395,11 @@ A aplicação será iniciada em `http://localhost:5000/`
       ```json
       { "message": "O campo 'Nome do plano' é obrigatório e não pode ser vazio" }
       { "message": "Data de início e data de término devem estar no formato YYYY-MM-DD" }
-      { "message": "Quantidade prescrita (g) deve ser maior que 0 no alimento 1 da entrada 1" }
+      { "message": "Quantidade prescrita deve ser maior que 0" }
+      ```
+    - 409:
+      ```json
+      { "message": "Paciente já possui plano alimentar" }
       ```
     - 500:
       ```json

@@ -495,52 +495,45 @@ class CreateMealPlan(Resource):
 
         data = request.get_json()
 
-        # Verificação: paciente já possui plano alimentar?
+        # verificação: paciente já possui plano alimentar?
         patient_id = data.get('patient_id')
         check_patient_query = "SELECT id FROM tb_patient_meal_plans WHERE patient_id = %s"
         existing_plan = execute_query(check_patient_query, (patient_id,))
         if existing_plan:
             return {'message': 'Este paciente já possui um plano alimentar cadastrado'}, 409
 
-        # Validação dos campos principais
+        # validação: campos obrigatórios
         required_fields = ['patient_id', 'plan_name', 'start_date', 'end_date', 'goals', 'entries']
         for field in required_fields:
             if not data.get(field) or (isinstance(data.get(field), str) and not data.get(field).strip()):
-                return {'message': f'O campo \'{field}\' é obrigatório e não pode ser vazio'}, 400
+                return {'message': f"O campo '{field}' é obrigatório e não pode ser vazio"}, 400
 
         if not isinstance(data['entries'], list) or not data['entries']:
             return {'message': 'entries deve ser uma lista não vazia'}, 400
 
+        # validação: existência dos alimentos
         for idx, entry in enumerate(data['entries']):
             for field in ['meal_type_name', 'day_of_plan', 'time_scheduled', 'foods']:
                 if not entry.get(field) or (isinstance(entry.get(field), str) and not entry.get(field).strip()):
-                    return {'message': f'O campo \'{field}\' é obrigatório e não pode ser vazio'}, 400
+                    return {'message': f"O campo '{field}' é obrigatório e não pode ser vazio"}, 400
 
             if not isinstance(entry['foods'], list) or not entry['foods']:
-                return {'message': f'Alimentos é obrigatório na entrada {idx+1} e não pode ser vazio'}, 400
+                return {'message': f"Alimentos é obrigatório na entrada {idx+1} e não pode ser vazio"}, 400
 
             for fidx, food in enumerate(entry['foods']):
-                for field in ['food_id', 'prescribed_quantity_grams', 'display_portion']:
+                for field in ['food_name', 'prescribed_quantity', 'unit_measure', 'energy_value_kcal']:
                     if food.get(field) in [None, ""]:
-                        return {'message': f'O campo \'{field}\' é obrigatório no alimento {fidx+1} da entrada {idx+1} e não pode ser vazio'}, 400
+                        return {'message': f"O campo '{field}' é obrigatório no alimento {fidx+1} da entrada {idx+1} e não pode ser vazio"}, 400
 
-                try:
-                    food_id = int(food['food_id'])
-                except Exception:
-                    return {'message': f'Alimento deve ser inteiro no alimento {fidx+1} da entrada {idx+1}'}, 400
-
-                try:
-                    prescribed_quantity = float(food['prescribed_quantity_grams'])
-                    if prescribed_quantity <= 0:
-                        return {'message': f'Quantidade prescrita (g) deve ser maior que 0 no alimento {fidx+1} da entrada {idx+1}'}, 400
-                except Exception:
-                    return {'message': f'Quantidade prescrita (g) deve ser um número no alimento {fidx+1} da entrada {idx+1}'}, 400
-
-                if not isinstance(food['display_portion'], str) or not food['display_portion'].strip():
-                    return {'message': f'Porção exibida deve ser uma string não vazia no alimento {fidx+1} da entrada {idx+1}'}, 400
+                # Checagem de existência do alimento
+                food_name = food['food_name']
+                food_id_query = "SELECT id FROM tb_foods WHERE name = %s"
+                food_id_result = execute_query(food_id_query, (food_name,))
+                if not food_id_result:
+                    return {'message': f"Alimento '{food_name}' não encontrado no banco de dados"}, 400
 
         try:
-            # Inserção do plano alimentar
+            # cria plano alimentar
             insert_meal_plan_query = """
                 INSERT INTO tb_patient_meal_plans
                     (patient_id, professional_id, plan_name, start_date, end_date, goals)
@@ -562,7 +555,6 @@ class CreateMealPlan(Resource):
             if not meal_plan_id:
                 return {'message': 'Erro ao criar plano alimentar'}, 500
 
-            # Inserção das entradas e alimentos
             for entry in data['entries']:
                 insert_entry_query = """
                     INSERT INTO tb_meal_plan_entries
@@ -585,18 +577,27 @@ class CreateMealPlan(Resource):
                     return {'message': 'Erro ao criar entrada do plano alimentar'}, 500
 
                 for food in entry['foods']:
+                    # Buscar o food_id pelo food_name
+                    food_id_query = "SELECT id FROM tb_foods WHERE name = %s"
+                    food_id_result = execute_query(food_id_query, (food['food_name'],))
+                    food_id = food_id_result[0]['id']
+
+                    prescribed_quantity = float(food['prescribed_quantity'])
+                    unit_measure = food['unit_measure']
+
                     insert_food_query = """
                         INSERT INTO tb_meal_plan_foods
-                        (meal_plan_entry_id, food_id, prescribed_portion, prescribed_quantity_grams, preparation_notes, created_at, updated_at)
-                        VALUES (%s, %s, %s, %s, %s, NOW(), NOW())
+                        (meal_plan_entry_id, food_id, prescribed_portion, prescribed_unit_measure, prescribed_quantity_grams, preparation_notes, created_at, updated_at)
+                        VALUES (%s, %s, %s, %s, %s, %s, NOW(), NOW())
                     """
                     execute_query(
                         insert_food_query,
                         (
                             entry_id,
-                            food['food_id'],
-                            food['display_portion'],
-                            food['prescribed_quantity_grams'],
+                            food_id,
+                            prescribed_quantity,    
+                            unit_measure,                
+                            prescribed_quantity,         
                             food.get('preparation_notes')
                         )
                     )
@@ -780,52 +781,6 @@ class DeleteMealPlan(Resource):
             return {'message': f'Erro ao deletar plano alimentar: {str(e)}'}, 500
 
 
-# class ListPatientMealPlans(Resource):
-#     @jwt_required()
-#     def get(self, patient_id):
-#         try:
-#             current_user = get_jwt_identity()
-#             claims = get_jwt()
-
-#             if claims.get('role') == 'professional':
-#                 check_patient_query = """
-#                     SELECT id FROM tb_patients
-#                     WHERE id = %s AND professional_id = %s
-#                 """
-#                 patient = execute_query(check_patient_query, (patient_id, current_user))
-                
-#             elif claims.get('role') == 'patient':
-#                 check_patient_query = """
-#                     SELECT id FROM tb_patients
-#                     WHERE id = %s AND id = %s
-#                 """
-#                 patient = execute_query(check_patient_query, (patient_id, current_user))
-#             else:
-#                 return {'message': 'Acesso não autorizado'}, 403
-
-#             if not patient:
-#                 return {'message': 'Paciente não encontrado ou acesso não autorizado'}, 404
-
-#             # Listar todos os planos do paciente
-#             plans_query = """
-#                 SELECT id, \
-#                        plan_name, \
-#                        DATE_FORMAT(start_date, '%%Y-%%m-%%d')             as start_date, \
-#                        DATE_FORMAT(end_date, '%%Y-%%m-%%d')               as end_date, \
-#                        goals, \
-#                        DATE_FORMAT(created_at, '%%Y-%%m-%%d %%H:%%i:%%s') as created_at, \
-#                        DATE_FORMAT(updated_at, '%%Y-%%m-%%d %%H:%%i:%%s') as updated_at
-#                 FROM tb_patient_meal_plans
-#                 WHERE patient_id = %s
-#                 ORDER BY start_date DESC \
-#             """
-#             plans = execute_query(plans_query, (patient_id,))
-
-#             return {'meal_plans': plans}, 200
-
-#         except Exception as e:
-#             logger.error(f"Erro ao listar planos alimentares: {str(e)}", exc_info=True)
-#             return {'message': f'Erro ao listar planos alimentares: {str(e)}'}, 500 
 
 class FoodList(Resource):
     @jwt_required()
