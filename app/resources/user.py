@@ -503,7 +503,7 @@ class CreateMealPlan(Resource):
             return {'message': 'Este paciente já possui um plano alimentar cadastrado'}, 409
 
         # validação: campos obrigatórios
-        required_fields = ['patient_id', 'plan_name', 'start_date', 'end_date', 'goals', 'entries']
+        required_fields = ['patient_id', 'plan_name', 'start_date', 'end_date', 'entries']
         for field in required_fields:
             if not data.get(field) or (isinstance(data.get(field), str) and not data.get(field).strip()):
                 return {'message': f"O campo '{field}' é obrigatório e não pode ser vazio"}, 400
