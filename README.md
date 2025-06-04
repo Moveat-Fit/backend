@@ -218,6 +218,43 @@ A aplicação será iniciada em `http://localhost:5000/`
 
 ---
 
+### Detalhes do Profissional
+**GET** `/api/professional/details` (requer autenticação)
+
+- **Descrição:** Retorna os dados do profissional autenticado.
+- **Responses**
+  - Sucesso:
+    - 200:
+      ```json
+      {
+        "id": "1",
+        "full_name": "Maria Silva",
+        "email": "maria@exemplo.com",
+        "cpf": "12345678901",
+        "phone": "11999999999",
+        "regional_council_type": "CRN",
+        "regional_council": "12345",
+        "created_at": "2024-06-01 10:30:00",
+        "updated_at": "2024-06-10 15:45:00"
+      }
+      ```
+  - Erro:
+    - 403:
+      ```json
+      { "message": "Acesso não autorizado" }
+      ```
+    - 404:
+      ```json
+      { "message": "Profissional não encontrado" }
+      ```
+    - 500:
+      ```json
+      { "message": "Erro ao obter dados do profissional: <detalhes>" }
+      ```
+
+
+
+---
 ### Login de Paciente
 **POST** `/api/patient/login`
 

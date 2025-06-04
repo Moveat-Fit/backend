@@ -266,11 +266,11 @@ class PatientDetails(Resource):
             logger.debug(f"Query result: {patientDetails}")
 
 
-            if not patientDetails != None or not len(patientDetails) > 0: 
+            if not patientDetails != None or not len(patientDetails) > 0:
                 return {'message': f'O paciente com id {id} não foi encontrado.'}, 404
-            
+
             return {'patient': patientDetails}, 200
-                
+
         except Exception as e:
             logger.error(f"Error occurred: {str(e)}", exc_info=True)
             return {'message': f'Erro ao buscar paciente: {str(e)}'}, 500
@@ -460,22 +460,22 @@ class UpdatePatient(Resource):
 class MealPlanFood(BaseModel):
     food_id: int
     prescribed_quantity_grams: float = Field(..., gt=0)
-    display_portion: str  
-    preparation_notes: Optional[str] = None 
+    display_portion: str
+    preparation_notes: Optional[str] = None
 
 class MealPlanEntry(BaseModel):
     meal_type_name: str
     day_of_plan: date
-    time_scheduled: str  
-    notes: Optional[str] = None  
+    time_scheduled: str
+    notes: Optional[str] = None
     foods: List[MealPlanFood]
 
 class MealPlanCreate(BaseModel):
     patient_id: int
-    plan_name: str  
+    plan_name: str
     start_date: date
-    end_date: date  
-    goals: str  
+    end_date: date
+    goals: str
     entries: List[MealPlanEntry]
 
 class MealPlanUpdate(BaseModel):
@@ -595,9 +595,9 @@ class CreateMealPlan(Resource):
                         (
                             entry_id,
                             food_id,
-                            prescribed_quantity,    
-                            unit_measure,                
-                            prescribed_quantity,         
+                            prescribed_quantity,
+                            unit_measure,
+                            prescribed_quantity,
                             food.get('preparation_notes')
                         )
                     )
@@ -838,3 +838,53 @@ class FoodList(Resource):
         except Exception as e:
             logger.error(f"Erro ao listar alimentos: {str(e)}", exc_info=True)
             return {'message': f'Erro ao listar alimentos: {str(e)}'}, 500
+
+class ProfessionalDetails(Resource):
+    @jwt_required()
+    def get(self):
+        try:
+            current_user = get_jwt_identity()
+            claims = get_jwt()
+
+            # Verificar se o usuário é um profissional
+            if claims.get('role') != 'professional':
+                return {'message': 'Acesso não autorizado'}, 403
+
+            # Consultar os dados do profissional
+            query = """
+                SELECT 
+                    id,
+                    full_name,
+                    email,
+                    cpf,
+                    phone,
+                    regional_council_type,
+                    regional_council,
+                    DATE_FORMAT(created_at, '%%Y-%%m-%%d %%H:%%i:%%s') AS created_at,
+                    DATE_FORMAT(updated_at, '%%Y-%%m-%%d %%H:%%i:%%s') AS updated_at
+                FROM tb_professionals
+                WHERE id = %s
+            """
+            professional = execute_query(query, (current_user,))
+
+            if not professional:
+                return {'message': 'Profissional não encontrado'}, 404
+
+            # Formatar os dados de retorno
+            professional_data = {
+                'id': str(professional[0]['id']),
+                'full_name': professional[0]['full_name'],
+                'email': professional[0]['email'],
+                'cpf': professional[0]['cpf'],
+                'phone': professional[0]['phone'],
+                'regional_council_type': professional[0]['regional_council_type'],
+                'regional_council': professional[0]['regional_council'],
+                'created_at': professional[0]['created_at'],
+                'updated_at': professional[0]['updated_at']
+            }
+
+            return professional_data, 200
+
+        except Exception as e:
+            logger.error(f"Erro ao obter dados do profissional: {str(e)}", exc_info=True)
+            return {'message': f'Erro ao obter dados do profissional: {str(e)}'}, 500

@@ -8,7 +8,8 @@ from .resources.user import (ProfessionalRegistration, ProfessionalLogin,
                              PatientList, PatientDetails,
                              DeletePatient, UpdatePatient,
                              CreateMealPlan, GetMealPlan,
-                             UpdateMealPlan, DeleteMealPlan, FoodList)
+                             UpdateMealPlan, DeleteMealPlan, FoodList,
+                             ProfessionalDetails)
 
 from .resources.protected import ProtectedResource
 from .resources.public import PublicResource
@@ -39,6 +40,7 @@ def create_app():
     api.add_resource(DeleteMealPlan, '/api/meal-plans/<int:meal_plan_id>')
     # api.add_resource(ListPatientMealPlans, '/api/patients/<int:patient_id>/meal-plans')
     api.add_resource(FoodList, '/api/foods')
+    api.add_resource(ProfessionalDetails, '/api/professional/details')
 
     # Tratamento de erros
     @app.errorhandler(404)
