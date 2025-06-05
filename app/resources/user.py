@@ -665,28 +665,27 @@ class GetMealPlan(Resource):
             """
             entries = execute_query(entries_query, (plan_info['id'],))
 
-            # Para cada entrada, busca os alimentos da tb_meal_plan_foods e coloca em foods[]
+            # Para cada entrada, busca os alimentos e monta no padrão do CreateMealPlan
             for entry in entries:
                 foods_query = """
                     SELECT 
-                        id,
-                        food_id,
-                        prescribed_quantity_grams,
-                        prescribed_portion,
-                        prescribed_unit_measure,
-                        preparation_notes
-                    FROM tb_meal_plan_foods
-                    WHERE meal_plan_entry_id = %s
+                        f.name as food_name,
+                        mpf.prescribed_quantity_grams as prescribed_quantity,
+                        mpf.prescribed_unit_measure as unit_measure,
+                        f.energy_value_kcal,
+                        mpf.preparation_notes
+                    FROM tb_meal_plan_foods mpf
+                    JOIN tb_foods f ON mpf.food_id = f.id
+                    WHERE mpf.meal_plan_entry_id = %s
                 """
                 foods_result = execute_query(foods_query, (entry['id'],))
                 foods = []
                 for food in foods_result:
                     foods.append({
-                        "id": food['id'],
-                        "food_id": food['food_id'],
-                        "prescribed_quantity_grams": float(food['prescribed_quantity_grams']) if food['prescribed_quantity_grams'] is not None else None,
-                        "prescribed_portion": float(food['prescribed_portion']) if food['prescribed_portion'] is not None else None,
-                        "prescribed_unit_measure": food['prescribed_unit_measure'],
+                        "food_name": food['food_name'],
+                        "prescribed_quantity": float(food['prescribed_quantity']) if food['prescribed_quantity'] is not None else None,
+                        "unit_measure": food['unit_measure'],
+                        "energy_value_kcal": float(food['energy_value_kcal']) if food['energy_value_kcal'] is not None else None,
                         "preparation_notes": food['preparation_notes']
                     })
                 entry['foods'] = foods
