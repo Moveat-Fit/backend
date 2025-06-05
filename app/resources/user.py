@@ -665,7 +665,6 @@ class GetMealPlan(Resource):
             """
             entries = execute_query(entries_query, (plan_info['id'],))
 
-            # Para cada entrada, busca os alimentos e monta no padrão do CreateMealPlan
             for entry in entries:
                 foods_query = """
                     SELECT 
