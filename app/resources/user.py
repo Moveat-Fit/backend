@@ -611,28 +611,12 @@ class CreateMealPlan(Resource):
 
 class GetMealPlan(Resource):
     @jwt_required()
-    def get(self, patient_id):
+    def get(self, meal_plan_id):
         try:
             current_user = get_jwt_identity()
             claims = get_jwt()
 
-            # Verifica se o paciente existe e obtém o profissional responsável
-            check_patient_query = """
-                SELECT p.id, p.professional_id
-                FROM tb_patients p
-                WHERE p.id = %s
-            """
-            patient = execute_query(check_patient_query, (patient_id,))
-            if not patient:
-                return {'message': 'Paciente não encontrado'}, 404
-
-            # Permissão: profissional só vê seus pacientes, paciente só vê seu próprio plano
-            if claims.get('role') == 'professional' and patient[0]['professional_id'] != int(current_user):
-                return {'message': 'Acesso não autorizado'}, 403
-            if claims.get('role') == 'patient' and int(current_user) != int(patient_id):
-                return {'message': 'Acesso não autorizado'}, 403
-
-            # Busca o plano alimentar do paciente
+            # Busca o plano alimentar pelo ID
             plan_query = """
                 SELECT 
                     id, patient_id, professional_id, plan_name,
@@ -642,14 +626,20 @@ class GetMealPlan(Resource):
                     DATE_FORMAT(created_at, '%%Y-%%m-%%d %%H:%%i:%%s') as created_at,
                     DATE_FORMAT(updated_at, '%%Y-%%m-%%d %%H:%%i:%%s') as updated_at
                 FROM tb_patient_meal_plans
-                WHERE patient_id = %s
+                WHERE id = %s
                 LIMIT 1
             """
-            plan_result = execute_query(plan_query, (patient_id,))
+            plan_result = execute_query(plan_query, (meal_plan_id,))
             if not plan_result:
-                return {'message': 'Plano alimentar não encontrado para este paciente'}, 404
+                return {'message': 'Plano alimentar não encontrado'}, 404
 
             plan_info = plan_result[0]
+
+            # Permissão: profissional só vê seus pacientes, paciente só vê seu próprio plano
+            if claims.get('role') == 'professional' and plan_info['professional_id'] != int(current_user):
+                return {'message': 'Acesso não autorizado'}, 403
+            if claims.get('role') == 'patient' and plan_info['patient_id'] != int(current_user):
+                return {'message': 'Acesso não autorizado'}, 403
 
             # Busca todas as entradas do plano alimentar
             entries_query = """
@@ -700,7 +690,7 @@ class GetMealPlan(Resource):
 
 class UpdateMealPlan(Resource):
     @jwt_required()
-    def put(self, patient_id):
+    def put(self, meal_plan_id):
         try:
             current_user = get_jwt_identity()
             claims = get_jwt()
@@ -709,16 +699,14 @@ class UpdateMealPlan(Resource):
 
             data = request.get_json()
 
-            # Buscar o plano alimentar do paciente
+            # Buscar o plano alimentar pelo ID e profissional
             check_plan_query = """
                 SELECT id FROM tb_patient_meal_plans
-                WHERE patient_id = %s AND professional_id = %s
+                WHERE id = %s AND professional_id = %s
             """
-            plan = execute_query(check_plan_query, (patient_id, current_user))
+            plan = execute_query(check_plan_query, (meal_plan_id, current_user))
             if not plan:
                 return {'message': 'Plano alimentar não encontrado ou não pertence ao profissional'}, 404
-
-            meal_plan_id = plan[0]['id']
 
             # Atualizar informações básicas do plano
             update_fields = []
@@ -793,7 +781,6 @@ class UpdateMealPlan(Resource):
         except Exception as e:
             logger.error(f"Erro ao atualizar plano alimentar: {str(e)}", exc_info=True)
             return {'message': f'Erro ao atualizar plano alimentar: {str(e)}'}, 500
-
 
 class DeleteMealPlan(Resource):
     @jwt_required()
