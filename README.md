@@ -10,6 +10,7 @@
     - [Cadastro de Profissional](#cadastro-de-profissional)
     - [Login de Profissional](#login-de-profissional)
     - [Cadastro de Paciente](#cadastro-de-paciente)
+    - [Detalhes do Profissional](#detalhes-do-profissional)
     - [Login de Paciente](#login-de-paciente)
   - [Pacientes](#pacientes)
     - [Detalhes do Paciente](#detalhes-do-paciente)
@@ -19,7 +20,7 @@
   - [Planos Alimentares](#planos-alimentares)
     - [Criar Plano Alimentar](#criar-plano-alimentar)
     - [Obter Plano Alimentar](#obter-plano-alimentar)
-    - [Atualizar Plano Alimentar](#atualizar-plano-alimentar)
+  - [Atualizar Plano Alimentar](#atualizar-plano-alimentar)
     - [Deletar Plano Alimentar](#deletar-plano-alimentar)
   - [Alimentos](#alimentos)
     - [Listar Alimentos](#listar-alimentos)
@@ -446,9 +447,9 @@ A aplicação será iniciada em `http://localhost:5000/`
 ---
 
 ### Obter Plano Alimentar
-**GET** `/api/mealplan/<meal_plan_id>` (requer autenticação)
+**GET** `/api/mealplan/<patient_id>` (requer autenticação)
 
-- **Descrição:** Retorna detalhes de um plano alimentar.
+- **Descrição:** Retorna detalhes do plano alimentar do paciente informado.
 - **Responses**
   - Sucesso:
     - 200:
@@ -467,16 +468,56 @@ A aplicação será iniciada em `http://localhost:5000/`
 
 ---
 
-### Atualizar Plano Alimentar
-**PUT** `/api/mealplan/<meal_plan_id>` (requer autenticação de profissional)
+## Atualizar Plano Alimentar
+**PUT** `/api/meal-plans/<patient_id>` (requer autenticação de profissional)
 
-- **Descrição:** Atualiza informações básicas do plano alimentar.
-- Campos aceitos: plan_name, start_date, end_date, goals
--   **Request**
+- **Descrição:** Atualiza todas as informações do plano alimentar de um paciente.   
+- **Request**
 ```json
 {
   "plan_name": "Plano Atualizado",
-  "goals": "Manter peso"
+  "start_date": "2024-06-10",
+  "end_date": "2024-06-20",
+  "goals": "Novo objetivo do plano",
+  "entries": [
+    {
+      "meal_type_name": "Café da manhã",
+      "day_of_plan": "2024-06-10",
+      "time_scheduled": "08:00",
+      "notes": "Sem açúcar",
+      "foods": [
+        {
+          "food_name": "Pão francês",
+          "prescribed_quantity": 1.0,
+          "unit_measure": "unidade",
+          "energy_value_kcal": 150,
+          "preparation_notes": "Torrar levemente"
+        },
+        {
+          "food_name": "Requeijão cremoso light",
+          "prescribed_quantity": 2.0,
+          "unit_measure": "colheres de sopa",
+          "energy_value_kcal": 10.0,
+          "preparation_notes": ""
+        }
+      ]
+    },
+    {
+      "meal_type_name": "Almoço",
+      "day_of_plan": "2024-06-10",
+      "time_scheduled": "12:00",
+      "notes": "",
+      "foods": [
+        {
+          "food_name": "Arroz branco cozido",
+          "prescribed_quantity": 1.0,
+          "unit_measure": "colher de arroz",
+          "energy_value_kcal": 130,
+          "preparation_notes": ""
+        }
+      ]
+    }
+  ]
 }
 ```
 - **Responses**

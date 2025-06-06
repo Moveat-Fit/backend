@@ -700,57 +700,93 @@ class GetMealPlan(Resource):
 
 class UpdateMealPlan(Resource):
     @jwt_required()
-    def put(self, meal_plan_id):
+    def put(self, patient_id):
         try:
             current_user = get_jwt_identity()
             claims = get_jwt()
-
             if claims.get('role') != 'professional':
                 return {'message': 'Acesso não autorizado'}, 403
 
             data = request.get_json()
-            meal_plan_update = MealPlanUpdate(**data)
 
-            # Verificar se o plano pertence ao profissional
+            # Buscar o plano alimentar do paciente
             check_plan_query = """
-                               SELECT id \
-                               FROM tb_patient_meal_plans
-                               WHERE id = %s \
-                                 AND professional_id = %s \
-                               """
-            plan = execute_query(check_plan_query, (meal_plan_id, current_user))
-
+                SELECT id FROM tb_patient_meal_plans
+                WHERE patient_id = %s AND professional_id = %s
+            """
+            plan = execute_query(check_plan_query, (patient_id, current_user))
             if not plan:
                 return {'message': 'Plano alimentar não encontrado ou não pertence ao profissional'}, 404
+
+            meal_plan_id = plan[0]['id']
 
             # Atualizar informações básicas do plano
             update_fields = []
             update_values = []
-
-            if meal_plan_update.plan_name is not None:
-                update_fields.append("plan_name = %s")
-                update_values.append(meal_plan_update.plan_name)
-
-            if meal_plan_update.start_date is not None:
-                update_fields.append("start_date = %s")
-                update_values.append(meal_plan_update.start_date)
-
-            if meal_plan_update.end_date is not None:
-                update_fields.append("end_date = %s")
-                update_values.append(meal_plan_update.end_date)
-
-            if meal_plan_update.goals is not None:
-                update_fields.append("goals = %s")
-                update_values.append(meal_plan_update.goals)
-
+            for field in ['plan_name', 'start_date', 'end_date', 'goals']:
+                if data.get(field) is not None:
+                    update_fields.append(f"{field} = %s")
+                    update_values.append(data[field])
             if update_fields:
                 update_query = f"""
-                    UPDATE tb_patient_meal_plans 
+                    UPDATE tb_patient_meal_plans
                     SET {', '.join(update_fields)}, updated_at = NOW()
                     WHERE id = %s
                 """
                 update_values.append(meal_plan_id)
                 execute_query(update_query, tuple(update_values))
+
+            # Atualizar entradas e alimentos (entries)
+            if 'entries' in data and isinstance(data['entries'], list):
+                # Remove todas as entradas e alimentos antigos
+                get_entries_query = "SELECT id FROM tb_meal_plan_entries WHERE meal_plan_id = %s"
+                old_entries = execute_query(get_entries_query, (meal_plan_id,))
+                for entry in old_entries:
+                    execute_query("DELETE FROM tb_meal_plan_foods WHERE meal_plan_entry_id = %s", (entry['id'],))
+                execute_query("DELETE FROM tb_meal_plan_entries WHERE meal_plan_id = %s", (meal_plan_id,))
+
+                # Insere as novas entradas e alimentos
+                for entry in data['entries']:
+                    insert_entry_query = """
+                        INSERT INTO tb_meal_plan_entries
+                            (meal_plan_id, meal_type_name, day_of_plan, time_scheduled, notes, created_at, updated_at)
+                        VALUES (%s, %s, %s, %s, %s, NOW(), NOW())
+                    """
+                    entry_id = execute_query(
+                        insert_entry_query,
+                        (
+                            meal_plan_id,
+                            entry['meal_type_name'],
+                            entry['day_of_plan'],
+                            entry['time_scheduled'],
+                            entry.get('notes')
+                        ),
+                        return_id=True
+                    )
+                    for food in entry['foods']:
+                        food_id_query = "SELECT id FROM tb_foods WHERE name = %s"
+                        food_id_result = execute_query(food_id_query, (food['food_name'],))
+                        if not food_id_result:
+                            return {'message': f"Alimento '{food['food_name']}' não encontrado no banco de dados"}, 400
+                        food_id = food_id_result[0]['id']
+                        prescribed_quantity = float(food['prescribed_quantity'])
+                        unit_measure = food['unit_measure']
+                        insert_food_query = """
+                            INSERT INTO tb_meal_plan_foods
+                            (meal_plan_entry_id, food_id, prescribed_portion, prescribed_unit_measure, prescribed_quantity_grams, preparation_notes, created_at, updated_at)
+                            VALUES (%s, %s, %s, %s, %s, %s, NOW(), NOW())
+                        """
+                        execute_query(
+                            insert_food_query,
+                            (
+                                entry_id,
+                                food_id,
+                                prescribed_quantity,
+                                unit_measure,
+                                prescribed_quantity,
+                                food.get('preparation_notes')
+                            )
+                        )
 
             return {'message': 'Plano alimentar atualizado com sucesso'}, 200
 
