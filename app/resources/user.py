@@ -690,7 +690,7 @@ class GetMealPlan(Resource):
 
 class UpdateMealPlan(Resource):
     @jwt_required()
-    def put(self, meal_plan_id):
+    def put(self, patient_id):
         try:
             current_user = get_jwt_identity()
             claims = get_jwt()
@@ -699,16 +699,16 @@ class UpdateMealPlan(Resource):
 
             data = request.get_json()
 
-            # Buscar o plano alimentar pelo ID e profissional
             check_plan_query = """
                 SELECT id FROM tb_patient_meal_plans
-                WHERE id = %s AND professional_id = %s
+                WHERE patient_id = %s AND professional_id = %s
             """
-            plan = execute_query(check_plan_query, (meal_plan_id, current_user))
+            plan = execute_query(check_plan_query, (patient_id, current_user))
             if not plan:
                 return {'message': 'Plano alimentar não encontrado ou não pertence ao profissional'}, 404
 
-            # Atualizar informações básicas do plano
+            meal_plan_id = plan[0]['id']
+
             update_fields = []
             update_values = []
             for field in ['plan_name', 'start_date', 'end_date', 'goals']:
