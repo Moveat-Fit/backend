@@ -611,12 +611,11 @@ class CreateMealPlan(Resource):
 
 class GetMealPlan(Resource):
     @jwt_required()
-    def get(self, meal_plan_id):
+    def get(self, patient_id):
         try:
             current_user = get_jwt_identity()
             claims = get_jwt()
 
-            # Busca o plano alimentar pelo ID
             plan_query = """
                 SELECT 
                     id, patient_id, professional_id, plan_name,
@@ -626,10 +625,10 @@ class GetMealPlan(Resource):
                     DATE_FORMAT(created_at, '%%Y-%%m-%%d %%H:%%i:%%s') as created_at,
                     DATE_FORMAT(updated_at, '%%Y-%%m-%%d %%H:%%i:%%s') as updated_at
                 FROM tb_patient_meal_plans
-                WHERE id = %s
+                WHERE patient_id = %s
                 LIMIT 1
             """
-            plan_result = execute_query(plan_query, (meal_plan_id,))
+            plan_result = execute_query(plan_query, (patient_id,))
             if not plan_result:
                 return {'message': 'Plano alimentar não encontrado'}, 404
 
