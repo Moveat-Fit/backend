@@ -783,7 +783,7 @@ class UpdateMealPlan(Resource):
 
 class DeleteMealPlan(Resource):
     @jwt_required()
-    def delete(self, meal_plan_id):
+    def delete(self, patient_id):
         try:
             current_user = get_jwt_identity()
             claims = get_jwt()
@@ -791,19 +791,30 @@ class DeleteMealPlan(Resource):
             if claims.get('role') != 'professional':
                 return {'message': 'Acesso não autorizado'}, 403
 
-            # Verificar se o plano pertence ao profissional
-            check_plan_query = """
-                               SELECT id \
-                               FROM tb_patient_meal_plans
-                               WHERE id = %s \
-                                 AND professional_id = %s \
-                               """
-            plan = execute_query(check_plan_query, (meal_plan_id, current_user))
 
+            check_plan_query = """
+                SELECT id FROM tb_patient_meal_plans
+                WHERE patient_id = %s AND professional_id = %s
+            """
+            plan = execute_query(check_plan_query, (patient_id, current_user))
             if not plan:
                 return {'message': 'Plano alimentar não encontrado ou não pertence ao profissional'}, 404
 
-            # Deletar o plano (os relacionamentos em cascata devem cuidar das entradas e alimentos)
+            meal_plan_id = plan[0]['id']
+
+            # Deletar alimentos das refeições do plano
+            delete_foods_query = """
+                DELETE mpf FROM tb_meal_plan_foods mpf
+                JOIN tb_meal_plan_entries mpe ON mpf.meal_plan_entry_id = mpe.id
+                WHERE mpe.meal_plan_id = %s
+            """
+            execute_query(delete_foods_query, (meal_plan_id,))
+
+            # Deletar refeições do plano
+            delete_entries_query = "DELETE FROM tb_meal_plan_entries WHERE meal_plan_id = %s"
+            execute_query(delete_entries_query, (meal_plan_id,))
+
+            # Deletar o plano
             delete_query = "DELETE FROM tb_patient_meal_plans WHERE id = %s"
             execute_query(delete_query, (meal_plan_id,))
 
